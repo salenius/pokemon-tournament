@@ -1,0 +1,52 @@
+name:		     championstournament
+version:             0.1.0.0
+github:              "salenius/championstournament"
+license:             BSD3
+author:              "Tommi Salenius"
+maintainer:          "tommi.salenius@gmail.com"
+copyright:           "MIT (2020)"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/salenius/championstournament#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- lens >= 4.19.2
+- mtl >= 2.2.2
+- QuickCheck >= 2.13.2
+- containers >= 0.6.2.1
+
+library:
+  source-dirs: src
+
+executables:
+  championstournament-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - championstournament
+
+tests:
+  championstournament-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - championstournament
