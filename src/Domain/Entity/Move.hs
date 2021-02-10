@@ -21,6 +21,7 @@ import Domain.Attribute.Counterparty
 import Control.Lens
 import Control.Lens.Prism
 
+
 data Accuracy =
   Accuracy Double
   | AlwaysHits
