@@ -6,9 +6,13 @@ data MoveExecution = MoveExecution
   {
     damageCaused :: Damage
   , recoilCaused :: Damage
-  , isSuccesful :: Bool
-  , hitsTarget :: Bool
-  , charges :: Bool
-  } | NotExecuted deriving (Eq,Show)
+  , hitWasCritical :: Bool
+  } deriving (Eq,Show)
 
 
+data PreviousStrike =
+  FailedToExecute
+  | ChargingMove
+  | FailedToHit
+  | CausesDamage MoveExecution
+  deriving (Eq,Show)
