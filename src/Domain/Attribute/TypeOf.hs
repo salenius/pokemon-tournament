@@ -19,7 +19,7 @@ data TypeOf =
   | Ghost
   | Dragon
   | Fairy
-  deriving (Eq, Show)
+  deriving (Eq, Show, Read)
 
 allTypes :: [TypeOf]
 allTypes =
