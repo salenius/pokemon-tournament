@@ -26,5 +26,5 @@ data Nature =
   | Sassy
   | Careful
   | Quirky
-  deriving (Eq,Show)
+  deriving (Eq,Show,Read)
 
