@@ -9,6 +9,25 @@ import Domain.Attribute.PokemonFactors
 import Domain.Attribute.TrainerFactors
 import Control.Lens
 
+data Trainer =
+  Red
+  | Blue
+  | Lance
+  | Steven
+  | Wallace
+  | Cynthia
+  | Alder
+  | Trainer CustomTrainer
+  deriving (Eq)
+
+data CustomTrainer = CustomTrainer
+  {
+    _customTrainerName :: String
+  , _customTrainerParty :: Party (Pokemon Move)
+  , _customTrainerClass :: TrainerClass
+  , _customTrainerRegion :: Region
+  } deriving (Eq,Show)
+
 data Party p =
   PartyOf1 p
   | PartyOf2 p p
@@ -16,7 +35,7 @@ data Party p =
   | PartyOf4 p p p p
   | PartyOf5 p p p p p
   | PartyOf6 p p p p p p
-  deriving (Eq,Ord)
+  deriving (Eq,Ord,Read)
 
 instance Show p => Show (Party p) where
   show (PartyOf1 p) = show $ [p]
@@ -42,19 +61,19 @@ instance Foldable Party where
   foldr f acc (PartyOf5 b c d e a) = foldr f (f a acc) (PartyOf4 b c d e)
   foldr f acc (PartyOf6 b c d e g a) = foldr f (f a acc) (PartyOf5 b c d e g)
 
-data Trainer p = Trainer
-  {
-    trainerName :: String
-  , trainerRegion :: Region
-  , trainerClass :: TrainerClass
-  , trainerParty :: Party p
-  } deriving (Eq)
 
-instance Show (Trainer p) where
-  show (Trainer n r c _) = "Trainer: " ++ n ++ " from " ++ show r ++ " (" ++ show c ++ ")"
+instance Show Trainer where
+  show Red     = "Trainer: Red from Kanto (Champion)"
+  show Blue    = "Trainer: Blue from Kanto (Champion)"
+  show Lance   = "Trainer: Lance from Johto (Champion)"
+  show Steven  = "Trainer: Steven from Hoenn (Champion)"
+  show Wallace = "Trainer: Wallace from Hoenn (Champion)"
+  show Cynthia = "Trainer: Cynthia from Sinnoh (Champion)"
+  show Alder   = "Trainer: Alder from Unova (Champion)"
+  show (Trainer (CustomTrainer n _ r c)) = "Trainer: " ++ n ++ " from " ++ show r ++ " (" ++ show c ++ ")"
 
 
-mkPokemon :: PokemonSpecies -> [Ab.Ability] -> I.HeldItem -> Move -> Move -> Move -> Move -> Pokemon Move
-mkPokemon species abs item mv1 mv2 mv3 mv4 =
-  Pokemon species abs item (Quadruple mv1 mv2 mv3 mv4) defaultLevel defaultNature defaultEVs defaultIVs
+mkPokemon :: PokemonSpecies' -> I.HeldItem -> Move -> Move -> Move -> Move -> Pokemon Move
+mkPokemon species item mv1 mv2 mv3 mv4 =
+  Pokemon species item (Quadruple mv1 mv2 mv3 mv4) defaultLevel defaultNature defaultEVs defaultIVs
 
