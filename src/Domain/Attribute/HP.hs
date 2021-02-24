@@ -26,6 +26,9 @@ setHp new old =
 addHp :: Int -> HP -> HP
 addHp new old = setHp ((view currentHp old) + new) old
 
+addHpPct :: Double -> HP -> HP
+addHpPct pct hp = addHp (floor $ pct * (fromIntegral $ view maxHp hp)) hp
+
 hpPct :: HP -> Double
 hpPct hp = fromIntegral cur / fromIntegral max'
   where
