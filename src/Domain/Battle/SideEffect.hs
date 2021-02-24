@@ -1,201 +1,220 @@
-{-# LANGUAGE TemplateHaskell, FlexibleContexts, MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell, FlexibleContexts, MultiParamTypeClasses,
+PatternSynonyms #-}
 
 module Domain.Battle.SideEffect where
 
-import Domain.Match.SideEffect as SE
-import Domain.Match.Validation as V
-import Domain.Match.BattleEffect as BE
-import Domain.Entity.Battle as B
-import Domain.Entity.PokemonState as PS
-import Control.Monad.State
-import Control.Monad.Reader
+import Domain.Effect
+import Domain.Battle.Logic
 import Control.Lens
+import Control.Applicative
 import Domain.Attribute.Damage as D
 import Domain.Attribute.MoveExecution
 import Domain.Attribute.HP
-import Domain.Battle.Damage
-import Domain.Battle.Logic
 import Domain.Attribute.Ailment
+import Domain.Attribute.Ability
+import Domain.Attribute.HeldItem
 import Domain.Attribute.Counterparty
-import Domain.Battle.Algebra as Alg
+import Domain.Attribute.TypeOf
+import Domain.Attribute.ModifStat
+import Domain.Attribute.Weather as W
 import Data.Maybe
 
-class MonadState a b => EffectMonad a b where
-  resetRandomDouble :: b ()
-
-data BattleEffectFolded a =
-  ApplyFolded a
-  | ChainFolded (BattleEffectFolded a) (BattleEffectFolded a)
-  | SpreadFolded (BattleEffectFolded a) (BattleEffectFolded a)
-  | ForRoundsFolded Int (BattleEffectFolded a)
+data SideEffect =
+  CauseAilment Ailment Counterparty
+  | DropStat Counterparty ModifStat Int 
+  | RaiseStat Counterparty ModifStat Int
+  | AddPercentageOfHP Counterparty Double
+  | CauseDamage D.Damage
+  | CauseRecoil Double D.Damage
+  | CauseFlinch
+  | CauseLeechSeeded
+  | SwitchPokemon Counterparty
+  | PreventOHKO Counterparty
+  | DropItem Counterparty
+  | WithProbability Double SideEffect
   deriving (Eq,Show)
 
-instance Semigroup (BattleEffectFolded a) where
-  a <> b = SpreadFolded a b
+withProbability :: Double -> SideEffect -> SideEffect
+withProbability prob (WithProbability prob' eff) =
+  WithProbability (prob + prob') eff
+withProbability prob eff = WithProbability prob eff
 
-instance Monoid a => Monoid (BattleEffectFolded a) where
-  mempty = ApplyFolded mempty
-
-data EffectInformation = EffectInformation
+data UnparsedSideEffect = UnparsedSideEffect
   {
-    _battleAtEffect :: Battle
-  , _damageMade :: Maybe D.Damage
-  , _prevStrikeInfo :: Maybe MoveExecution
-  , _genRandomDouble :: Double
-  }
+    sideEffect :: SideEffect
+  , sideEffectValidation :: EffectValidation
+  } deriving (Eq,Show)
 
-makeLenses ''EffectInformation
+appendValidation :: EffectValidation -> UnparsedSideEffect -> UnparsedSideEffect
+appendValidation vldtn (UnparsedSideEffect eff vldtn') =
+  UnparsedSideEffect eff $ vldtn `And` vldtn'
 
-currentBattleState = view battleAtEffect
+type EffectValidation = Fact StrikeFact
 
-instance BattleAlgebra EffectInformation where
-  getUser = getUser . currentBattleState
-  getCurrentPokemon pl = getCurrentPokemon pl . currentBattleState
-  updateCurrentPokemon fn pl = over battleAtEffect (Alg.updateCurrentPokemon fn pl)
-  getWeather = getWeather . currentBattleState
-  getPlayer pl = getPlayer pl . currentBattleState
-  updatePlayer fn pl = over battleAtEffect (Alg.updatePlayer fn pl)
-  setWeather w i = over battleAtEffect (Alg.setWeather w i)
+type SideEffect' = Effect UnparsedSideEffect
 
-instance ReadPreviousStrike EffectInformation where
-  askPrevStrike = view prevStrikeInfo
+liftEffect eff = return . UnparsedSideEffect eff
+
+moldBreaker = userAbilityIs MoldBreaker `Or`
+  userAbilityIs Teravolt `Or`
+  userAbilityIs Turboblaze
+
+leafGuard = userAbilityIs LeafGuard `And` weatherIs W.Sunny
+
+leafGuard' = intoTarget leafGuard `And` (Not moldBreaker)
+
+whiteHerb' = targetHeldItemIs (Just WhiteHerb)
+
+sturdy = userAbilityIs Sturdy `And` userHpIsFull
+
+sturdy' = intoTarget sturdy `And` (Not moldBreaker)
+
+poisonImmunityType =
+  userHasTypeOf Poison `Or`
+  userHasTypeOf Steel
+
+poisonImmunityType' = intoTarget poisonImmunityType
+
+clearBody' =
+  ((targetAbilityIs ClearBody `Or`
+  targetAbilityIs WhiteSmoke) `And` Not moldBreaker) `Or`
+  targetAbilityIs FullMetalBody
+
+notHealthy = Not $ userAilmentIs Healthy
+notHealthy' = intoTarget notHealthy
+
+synchronize' = targetAbilityIs Synchronize 
+
+addSynchronize = enrichValidation synchronize'
+
+chain' a b = a `chain` return b
+
+spread' a b = a `spread` return b
 
 
-damageInfo2effectInfo :: DamageInformation -> EffectInformation
-damageInfo2effectInfo damInfo =
-  EffectInformation
-  {
-    _battleAtEffect = view currentStateOfBattle damInfo
-  , _damageMade = Nothing
-  , _prevStrikeInfo = view lastMoveExecution damInfo
-  , _genRandomDouble = 0
-  }
+-- Enrich effect by validations
 
-damageIntoEffectInfo :: D.Damage -> EffectInformation -> EffectInformation
-damageIntoEffectInfo dam = set damageMade (Just dam)
+enrichValidation fact eff = appendValidation fact <$> intoValidation eff
 
---- Interpreters
+intoValidation :: SideEffect -> SideEffect'
+intoValidation (WithProbability prob eff) =
+  enrichValidation (Fact $ RandomDoubleLT prob) eff
 
-foldEffects :: (MonadReader EffectInformation m, EffectMonad EffectInformation m)
-  => SE.SideEffect
-  -> m (BattleEffectFolded SE.SideEffectType)
-foldEffects (BE.Apply a) = return $ ApplyFolded a
-foldEffects (BE.ValidateEffect v a) = do
-  bttl <- ask
-  let b = evalLogic bttl v
-  if b then foldEffects a else return mempty
-foldEffects (BE.Chain x y) = do
-  x' <- foldEffects x
-  y' <- foldEffects y
-  let b1 = x' == mempty 
-  let b2 = y' == mempty
-  return $ case b1 of
-    True -> mempty
-    False -> case b2 of
-      True -> x'
-      False -> ChainFolded x' y'
-foldEffects (BE.Spread x y) = do
-  x' <- foldEffects x
-  y' <- foldEffects y
-  let b1 = x' == mempty 
-  let b2 = y' == mempty
-  return $ case (b1,b2) of
-    (True,True) -> mempty
-    (True,False) -> y'
-    (False,True) -> x'
-    (False,False) -> SpreadFolded x' y'
-foldEffects (BE.ForRounds i a) = do
-  a' <- foldEffects a
-  let b = a' == mempty
-  return $ if b then mempty else ForRoundsFolded i a'
-foldEffects (BE.WithProbability d a) = do
-  resetRandomDouble
-  a' <- foldEffects a
-  btl <- ask
-  let randD = view genRandomDouble btl
-  return $ if (randD < d) then a' else mempty
+intoValidation eff@(CauseAilment Poisoned Target) = do
+  let vldtn = Not $ poisonImmunityType' `Or` leafGuard' `Or` notHealthy'
+  cont <- addSynchronize $ CauseAilment Poisoned User
+  liftEffect eff vldtn `chain` return cont
 
-evalEffect :: BattleEffectFolded SE.SideEffectType -> EffectInformation -> EffectInformation
-evalEffect (ChainFolded a b)  = evalEffect b. evalEffect a
-evalEffect (SpreadFolded a b) = evalEffect b. evalEffect a
-evalEffect (ApplyFolded a)    = evalEff a
-  where
-    modifPokemon User                      = modifyUserPokemon
-    modifPokemon Target                    = modifyTargetPokemon
-    modifPlayer  User                      = Alg.modifyUser
-    modifPlayer  Target                    = Alg.modifyTarget
-    evalEff SE.DoNothing                   = id
-    evalEff (SE.CauseAilment cp ai)        =
-      modifPokemon cp (case ai of
-                           Burned    -> setBurned
-                           Paralyzed -> setParalyzed
-                           Poisoned  -> setPoisoned
-                           Frozen    -> setFrozen 3
-                           Sleep     -> setSleep 3
-                           Healthy   -> setAilmentForTurns Healthy 0)
-    evalEff (SE.ThawOut cp)                = evalEff (SE.CauseAilment cp Healthy)
-    evalEff (SE.AddHP cp (SE.Amount a))    = modifPokemon cp (addHpAmount a)
-    evalEff (SE.AddHP cp (SE.PercentOf p)) = modifPokemon cp (addHpPercent p)
-    evalEff (SE.AddHP _ SE.Equalize)       = h
-      where f c battle =
-              let ownhp = do
-                    ohp        <- view currentHp <$> getter c
-                    usr        <- view currentHp <$> getter User
-                    trt        <- view currentHp <$> getter Target
-                    let total2 =  floor $ fromIntegral usr / fromIntegral trt
-                    return     $  total2 - ohp
+intoValidation eff@(CauseAilment Poisoned User) =
+  liftEffect eff (Not $ poisonImmunityType `Or` leafGuard `Or` notHealthy)
+  
+intoValidation eff@(CauseAilment Healthy _) =
+  liftEffect eff AlwaysTrue
 
-                  getter c = do
-                    x <- case c of
-                      User -> getUser battle
-                      Target -> getTarget battle
-                    p <- getCurrentPokemon x battle
-                    return $ view hpAmount p
+intoValidation eff@(CauseAilment Burned Target) = do
+  let vldtn = Not $ targetHasTypeOf Fire `Or` leafGuard' `Or` notHealthy'
+  cont <- addSynchronize $ CauseAilment Burned User
+  liftEffect eff vldtn `chain` return cont
 
-              in ownhp
+intoValidation eff@(CauseAilment Burned User) = do
+  liftEffect eff (Not $ userHasTypeOf Fire `Or` leafGuard `Or` notHealthy)
 
-            g cp amt battle = evalEff (SE.AddHP cp (SE.Amount (fromMaybe 0 $ amt))) battle
-            h battle        = g User (f User battle) . g Target (f Target battle) $ battle
+intoValidation eff@(CauseAilment Paralyzed Target) = do
+  let vldtn = Not $ targetHasTypeOf Electric `Or` leafGuard' `Or` notHealthy'
+  cont <- addSynchronize $ CauseAilment Paralyzed User
+  liftEffect eff vldtn `chain` return cont
 
-    evalEff (SE.DropItem cp)                    = modifPokemon cp PS.dropItem
-    evalEff (SE.IncreaseStat cp stat lvl)       =
-      modifPokemon cp (addStatModification stat lvl)
-    evalEff (SE.DropStat cp stat lvl)           =
-      modifPokemon cp (addStatModification stat (-lvl))
-    evalEff SE.CauseFlinch                      = modifyTargetPokemon makeFlinched
-    evalEff (SE.CauseConfusion cp)              = modifPokemon cp (makeConfused 3)
-    evalEff (SE.DrainDamage pct)                = f pct
-      where f pct b = fromMaybe b $ do
-              (D.Damage damAmt) <- view damageMade b
-              return             $ modifyUserPokemon (addHpAmount (floor $ pct * damAmt)) b
-    evalEff (SE.CauseRecoil pct)                = f pct
-      where f pct b = fromMaybe b $ do
-              (D.Damage damAmt) <- view damageMade b
-              return             $ modifyUserPokemon (addHpAmount (floor . negate $ pct * damAmt)) b
-    evalEff SE.CauseLeechSeeded                 = modifyTargetPokemon makeLeechSeeded
-    evalEff (SE.PutScreen SE.LightScreen cp)    = modifPlayer cp (B.putLightScreen 5)
-    evalEff (SE.PutScreen SE.Reflect cp)        = modifPlayer cp (B.putReflect 5)
-    evalEff (SE.RemoveScreen SE.LightScreen cp) = modifPlayer cp B.removeLightScreen
-    evalEff (SE.RemoveScreen SE.Reflect cp)     = modifPlayer cp B.removeReflect 
-    evalEff SE.ProtectUser                      = modifyUserPokemon makeProtected
-    evalEff SE.YawnTarget                       = modifyTargetPokemon $
-      (\x -> case view (currentStatus . yawned) x of
-               NotYawned -> makeYawned YawnedFirstRound x
-               _ -> x)
-    evalEff (SE.SwitchPokemon cp)               = modifPlayer cp (B.switchPokemon (const True))
-    evalEff (SE.ChangeWeather w)                = setWeather w 5
+intoValidation eff@(CauseAilment Paralyzed User) = do
+  liftEffect eff (Not $ userHasTypeOf Electric `Or` leafGuard `Or` notHealthy)
 
-evalEffect (ForRoundsFolded i (ApplyFolded x)) = case x of
-  SE.PutScreen SE.LightScreen cp -> modifPlayer  cp (B.putLightScreen i)
-  SE.PutScreen SE.Reflect cp     -> modifPlayer  cp (B.putReflect i)
-  SE.CauseAilment cp Frozen      -> modifPokemon cp (setFrozen i)
-  SE.CauseAilment cp Sleep       -> modifPokemon cp (setSleep i)
-  SE.CauseConfusion cp           -> modifPokemon cp (makeConfused i)
-  SE.ChangeWeather w             -> setWeather    w i
-  _                              -> evalEffect    $ ApplyFolded x
-  where
-    modifPokemon User = modifyUserPokemon
-    modifPokemon Target = modifyTargetPokemon
-    modifPlayer User = Alg.modifyUser
-    modifPlayer Target = Alg.modifyTarget
-evalEffect (ForRoundsFolded _ x) = evalEffect x
+intoValidation eff@(CauseAilment Frozen User) =
+  liftEffect eff (Not $ userHasTypeOf Ice `Or` leafGuard `Or` notHealthy)
+
+intoValidation eff@(CauseAilment Frozen Target) =
+  liftEffect eff (Not $ targetHasTypeOf Ice `Or` leafGuard' `Or` notHealthy')
+
+intoValidation eff@(CauseAilment Sleep Target) =
+  liftEffect eff (Not $ leafGuard `Or` notHealthy)
+
+intoValidation eff@(CauseAilment Sleep User) =
+  liftEffect eff (Not $ leafGuard)
+
+intoValidation eff@(RaiseStat _ _ _) =
+  liftEffect eff AlwaysTrue
+
+intoValidation eff@(DropStat User _ _) =
+  liftEffect eff (Not $ userHeldItemIs (Just WhiteHerb))
+
+intoValidation eff@(DropStat Target Attack' _) =
+  liftEffect eff (Not $ whiteHerb' `Or` clearBody' `Or` targetAbilityIs HyperCutter)
+
+intoValidation eff@(DropStat Target Defence' _) =
+  liftEffect eff (Not $ whiteHerb' `Or` clearBody' `Or` targetAbilityIs BigPecks)
+
+intoValidation eff@(DropStat Target Accuracy' _) =
+  liftEffect eff (Not $ whiteHerb' `Or` clearBody' `Or` targetAbilityIs KeenEye)
+
+intoValidation eff@(DropStat Target _ _) =
+  liftEffect eff (Not $ whiteHerb' `Or` clearBody')
+
+intoValidation CauseFlinch = do
+  let vldtn = Not $ targetAbilityIs InnerFocus
+  cont <- enrichValidation (targetAbilityIs Steadfast) $ RaiseStat Target Speed' 1
+  liftEffect CauseFlinch vldtn `chain` return cont
+
+intoValidation eff@(SwitchPokemon User) = do
+  naturalCure <- userAbilityIs NaturalCure `enrichValidation` CauseAilment Healthy User
+  regenerator <- userAbilityIs Regenerator `enrichValidation` AddPercentageOfHP User 0.33
+  intimidate <- player2nextPokemon (userAbilityIs Intimidate) `enrichValidation`
+    DropStat Target Attack' 1
+  liftEffect eff AlwaysTrue `chain`
+    (return naturalCure `spread'` regenerator `spread'` intimidate)
+
+intoValidation eff@(SwitchPokemon Target) = do
+  naturalCure <- targetAbilityIs NaturalCure `enrichValidation` CauseAilment Healthy Target
+  regenerator <- targetAbilityIs Regenerator `enrichValidation` AddPercentageOfHP Target 0.33
+  intimidate <- player2nextPokemon (targetAbilityIs Intimidate) `enrichValidation`
+    DropStat User Attack' 1
+  liftEffect eff (Not $ targetAbilityIs SuctionCups) `chain`
+    (return naturalCure `spread'` regenerator `spread'` intimidate)
+
+intoValidation eff@(AddPercentageOfHP _ _) =
+  liftEffect eff AlwaysTrue
+
+intoValidation eff@(CauseDamage _) = do
+  let sitrusBerry = targetHeldItemIs (Just SitrusBerry) `And` targetHpLessThan 0.5
+  sitrusBerry' <- sitrusBerry `enrichValidation` AddPercentageOfHP Target 0.25
+  liftEffect eff AlwaysTrue `chain`
+    (return sitrusBerry' `spread` intoValidation (PreventOHKO Target))
+
+intoValidation eff@(CauseRecoil _ _) = do
+  let sitrusBerry = userHeldItemIs (Just SitrusBerry) `And` userHpLessThan 0.5
+  sitrusBerry' <- sitrusBerry `enrichValidation` AddPercentageOfHP User 0.25
+  liftEffect eff (Not $ userAbilityIs RockHead) `chain`
+    (return sitrusBerry' `spread` intoValidation (PreventOHKO User))
+
+intoValidation eff@(PreventOHKO Target) =
+  liftEffect eff $ sturdy' `Or`
+  (targetHpIsFull `And` targetHeldItemIs (Just FocusSash))
+
+intoValidation eff@(PreventOHKO User) =
+  liftEffect eff $ sturdy `Or`
+  (userHpIsFull `And` userHeldItemIs (Just FocusSash))
+
+intoValidation eff@(DropItem _) =
+  liftEffect eff AlwaysTrue
+
+intoValidation CauseLeechSeeded =
+  liftEffect CauseLeechSeeded (Not $ targetHasTypeOf Grass)
+
+
+-- 
+
+itemIsValidated :: EffectValidation -> [EffectValidation]
+itemIsValidated vldtn = foldr (\v m -> case v of
+                                  ForCounterparty _ (HeldItemIs _)  -> Fact v : m
+                                  _ -> m) [] vldtn
+
+-- validations2dropItems :: [EffectValidation] -> [UnparsedSideEffect]
+-- validations2dropItems =
+  -- map (flip UnparsedSideEffect (DropItem))
