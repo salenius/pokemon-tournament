@@ -31,6 +31,7 @@ data Ability =
   | Levitate
   | LiquidVoice
   | Limber
+  | MagicBounce
   | MagicGuard
   | MagmaArmor
   | MarvelScale
@@ -41,18 +42,21 @@ data Ability =
   | Neuroforce
   | NoGuard
   | Normalize
+  | Oblivious
   | Overcoat
   | Overgrow
   | PoisonPoint
   | Pressure
   | PrismArmor
   | RainDish
+  | Regenerator
   | Rivalry
   | RockHead
   | RoughSkin
   | SandForce
   | SandRush
   | SandVeil
+  | SapSipper
   | SereneGrace
   | SheerForce
   | ShellArmor
@@ -62,6 +66,7 @@ data Ability =
   | Soundproof
   | Static
   | Steadfast
+  | StormDrain
   | Sturdy
   | SuctionCups
   | SwiftSwim
@@ -71,6 +76,7 @@ data Ability =
   | Torrent
   | Turboblaze
   | VitalSpirit
+  | VoltAbsorb
   | WaterAbsorb
   | WaterBubble
   | WaterVeil
