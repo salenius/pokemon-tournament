@@ -20,7 +20,7 @@ data IVs = IVs
   , _sAttackIv :: IV
   , _sDefenceIv :: IV
   , _speedIv :: IV
-  } deriving (Eq,Show)
+  } deriving (Eq,Show,Read)
 
 makeLenses ''IVs
 
@@ -32,7 +32,7 @@ data EVs = EVs
   , _sAttackEv :: EV
   , _sDefenceEv :: EV
   , _speedEv :: EV
-  } deriving (Eq,Show)
+  } deriving (Eq,Show,Read)
 
 makeLenses ''EVs
 
