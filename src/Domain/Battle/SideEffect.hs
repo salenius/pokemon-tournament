@@ -1,5 +1,5 @@
 {-# LANGUAGE TemplateHaskell, FlexibleContexts, MultiParamTypeClasses,
-PatternSynonyms #-}
+PatternSynonyms, ViewPatterns #-}
 
 module Domain.Battle.SideEffect where
 
