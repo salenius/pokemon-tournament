@@ -1,10 +1,19 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell, ViewPatterns, PatternSynonyms #-}
 
-module Domain.Attribute.HP where
+module Domain.Attribute.HP (
+  HP(),
+  mkHp,
+  pattern HP,
+  addHp,
+  addHpPct,
+  hpPct,
+  hpPctLessThan,
+  maxHp
+                           ) where
 
 import Control.Lens
 
-data HP = HP
+data HP = MkHP
   {
     _currentHp :: Int,
     _maxHp :: Int
@@ -12,8 +21,10 @@ data HP = HP
 
 makeLenses ''HP
 
+pattern HP hp <- MkHP hp _
+
 mkHp :: Int -> HP
-mkHp x = HP x' x'
+mkHp x = MkHP x' x'
   where
     x' = max 0 x
 
@@ -34,6 +45,9 @@ hpPct hp = fromIntegral cur / fromIntegral max'
   where
     cur = view currentHp hp
     max' = view maxHp hp
+
+hpPctLessThan :: Double -> HP -> Bool
+hpPctLessThan lim = (<) lim . hpPct
 
 instance Eq HP where
   (==) a b = view currentHp a == view currentHp b
