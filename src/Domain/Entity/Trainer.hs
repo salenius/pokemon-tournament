@@ -1,15 +1,12 @@
 module Domain.Entity.Trainer where
 
-import Domain.Entity.Pokemon
-import Domain.Entity.Pokemon.Species
-import Domain.Entity.Move
 import Domain.Attribute.Ability as Ab
 import Domain.Attribute.HeldItem as I
-import Domain.Attribute.PokemonFactors
 import Domain.Attribute.TrainerFactors
+import Domain.Pokemon.Individual
 import Control.Lens
 
-data Trainer =
+data Trainer pkmn mv =
   Red
   | Blue
   | Lance
@@ -17,16 +14,15 @@ data Trainer =
   | Wallace
   | Cynthia
   | Alder
-  | Trainer CustomTrainer
-  deriving (Eq)
+  | Trainer (CustomTrainer pkmn mv)
 
-data CustomTrainer = CustomTrainer
+data CustomTrainer pkmn mv = CustomTrainer
   {
     _customTrainerName :: String
-  , _customTrainerParty :: Party (Pokemon Move)
+  , _customTrainerParty :: Party (Pokemon pkmn mv)
   , _customTrainerClass :: TrainerClass
   , _customTrainerRegion :: Region
-  } deriving (Eq,Show)
+  }
 
 data Party p =
   PartyOf1 p
@@ -62,7 +58,7 @@ instance Foldable Party where
   foldr f acc (PartyOf6 b c d e g a) = foldr f (f a acc) (PartyOf5 b c d e g)
 
 
-instance Show Trainer where
+instance Show (Trainer pkmn mv) where
   show Red     = "Trainer: Red from Kanto (Champion)"
   show Blue    = "Trainer: Blue from Kanto (Champion)"
   show Lance   = "Trainer: Lance from Johto (Champion)"
@@ -73,7 +69,7 @@ instance Show Trainer where
   show (Trainer (CustomTrainer n _ r c)) = "Trainer: " ++ n ++ " from " ++ show r ++ " (" ++ show c ++ ")"
 
 
-mkPokemon :: PokemonSpecies' -> I.HeldItem -> Move -> Move -> Move -> Move -> Pokemon Move
-mkPokemon species item mv1 mv2 mv3 mv4 =
-  Pokemon species item (Quadruple mv1 mv2 mv3 mv4) defaultLevel defaultNature defaultEVs defaultIVs
+-- mkPokemon :: PokemonSpecies' -> I.HeldItem -> Move -> Move -> Move -> Move -> Pokemon Move
+-- mkPokemon species item mv1 mv2 mv3 mv4 =
+  -- Pokemon species item (Quadruple mv1 mv2 mv3 mv4) defaultLevel defaultNature defaultEVs defaultIVs
 
