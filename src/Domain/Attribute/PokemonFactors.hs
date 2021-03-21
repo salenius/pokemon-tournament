@@ -40,8 +40,8 @@ data IndividualFactor = IndividualFactor
   {
     ivs :: IVs
   , evs :: EVs
-  , nature :: Nature
-  , level :: Level'
+  , natureOf' :: Nature
+  , levelOf' :: Level'
   } deriving (Eq,Show)
 
 defaultIVs = IVs 31 31 31 31 31 31
