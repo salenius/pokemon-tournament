@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Domain.Entity.Move where
 
 import Domain.Attribute.Choice
@@ -14,6 +16,7 @@ import Domain.Attribute.Ailment
 import Domain.Attribute.Ability
 import qualified Domain.Attribute.Weather as W
 import Domain.Attribute.Counterparty
+import Control.Lens
 
 data StatusMove =
   AcidArmor
@@ -34,10 +37,14 @@ data StatusMove =
   | Yawn
   deriving (Eq,Show,Read,Ord,Enum)
 
+makeClassyPrisms ''StatusMove
+
 data DirectDamageMove =
   MetalBurst
   | SheerCold
   deriving (Eq,Show,Read,Ord,Enum)
+
+makeClassyPrisms ''DirectDamageMove
 
 data DamageMove =
   Struggle
@@ -111,11 +118,45 @@ data DamageMove =
   | ZenHeadbutt
   deriving (Eq,Show,Read,Ord,Enum)
 
-data Move =
+makeClassyPrisms ''DamageMove
+
+data BuiltInMove =
   DamageMove' DamageMove
   | DirectDamageMove' DirectDamageMove
   | StatusMove' StatusMove
   deriving (Eq,Show,Read,Ord)
+
+makeClassyPrisms ''BuiltInMove
+
+
+data SuperMove =
+  OtherMove
+  | BuiltIn BuiltInMove
+  deriving (Eq,Show)
+
+makeClassyPrisms ''SuperMove
+
+instance AsBuiltInMove SuperMove where
+  _BuiltInMove = _BuiltIn
+
+instance AsDamageMove SuperMove where
+  _DamageMove = _DamageMove'
+
+
+-- 
+
+--
+
+instance AsDamageMove BuiltInMove where
+  _DamageMove = _DamageMove'
+
+instance AsStatusMove BuiltInMove where
+  _StatusMove = _StatusMove'
+
+instance AsDirectDamageMove BuiltInMove where
+  _DirectDamageMove = _DirectDamageMove'
+
+--
 
 category' :: DamageMove -> Category'
 category' Acrobatics = Physical'
@@ -266,7 +307,7 @@ instance TypeableMove DirectDamageMove where
   typeOfMove MetalBurst = Steel
   typeOfMove SheerCold = Ice
 
-instance TypeableMove Move where
+instance TypeableMove BuiltInMove where
   typeOfMove (DamageMove' mv) = typeOfMove mv
   typeOfMove (StatusMove' mv) = typeOfMove mv
   typeOfMove (DirectDamageMove' mv) = typeOfMove mv
@@ -295,7 +336,7 @@ class CategorizableMove m where
   category :: m -> Category
 
 class WrappableMove m where
-  wrapMove :: m -> Move
+  wrapMove :: m -> BuiltInMove
 
 class TypeableMove m where
   typeOfMove :: m -> TypeOf
@@ -332,5 +373,5 @@ allStatusMoves = enumFrom AcidArmor
 allDirectDamageMoves :: [DirectDamageMove]
 allDirectDamageMoves = enumFrom MetalBurst
 
-allMoves :: [Move]
+allMoves :: [BuiltInMove]
 allMoves = (wrapMove <$> allStatusMoves) ++ (wrapMove <$> allAttackingMoves) ++ (wrapMove <$> allDirectDamageMoves)

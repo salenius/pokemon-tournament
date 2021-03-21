@@ -1,510 +1,537 @@
-{-# LANGUAGE TemplateHaskell, GADTs #-}
+{-# LANGUAGE TemplateHaskell, GADTs, ViewPatterns, PatternSynonyms #-}
 
 module Domain.Entity.Pokemon.Species where
 
 import Domain.Attribute.TypeOf
 import Domain.Attribute.Gender
 import Domain.Attribute.Ability
+import Domain.Attribute.Statistic
 import Control.Lens
+import Data.Char
 
-class (Eq pkmn, Show pkmn) => PokemonSpecies pkmn where
-  baseHp :: pkmn -> Int
-  baseAttack :: pkmn -> Int
-  baseDefence :: pkmn -> Int
-  baseSAttack :: pkmn -> Int
-  baseSDefence :: pkmn -> Int
-  baseSpeed :: pkmn -> Int
+class PokemonSpecies pkmn where
+  baseStat :: BaseStat -> pkmn -> Int
   weight :: pkmn -> Double
   typeOfPokemon :: pkmn -> [TypeOf]
-  genderRatio :: pkmn -> GenderRatio
-  possibleAbilities :: pkmn -> [Ability]
-  revertToForm :: pkmn -> pkmn
-  isPikachu :: pkmn -> Bool
-  isPikachu _ = False
+  ability :: pkmn -> Ability
+  genderRatio :: pkmn -> Gender -> Double
+  
 
-data BuiltInSpecies =
-  Pikachu
-  | Lapras
-  | Snorlax
-  | Venusaur
-  | Charizard
-  | Blastoise
-  | Aerodactyl
-  | Machamp
-  | Alakazam
-  | Exeggutor
-  | Arcanine
-  | Gyarados
-  | Dragonite
-  | Salamence
-  | Kingdra
-  | Haxorus
-  | Hydreigon
-  | Flygon
-  | Metagross
-  | Aggron
-  | Excadrill
-  | Archeops
-  | Cradily
-  | Armaldo
-  | Milotic
-  | Sharpedo
-  | Walrein
-  | Ludicolo
-  | Swampert
-  | Starmie
-  | Garchomp
-  | Spiritomb
-  | Roserade
-  | Togekiss
-  | Lucario
-  | Glaceon
-  | Volcarona
-  | Conkeldurr
-  | Reuniclus
-  | Krookodile
-  | Chandelure
-  | Braviary
-  deriving (Eq,Show,Read,Ord,Enum)
+data Pikachu = Pikachu'withStatic deriving (Eq,Show,Read)
 
+data Lapras =
+  Lapras'withWaterAbsorb
+  | Lapras'withShellArmor
+  deriving (Eq,Show,Read)
 
-makeLenses ''BuiltInSpecies
+data Snorlax =
+  Snorlax'withImmunity
+  | Snorlax'withThickFat
+  | GigantamaxSnorlax
+  deriving (Eq,Show,Read)
+
+data Venusaur =
+  Venusaur'withOvergrow
+  | MegaVenusaur
+  deriving (Eq,Show,Read)
+
+data Charizard =
+  Charizard'withBlaze
+  | MegaCharizardX
+  | MegaCharizardY
+  deriving (Eq,Show,Read)
+
+data Blastoise =
+  Blastoise'withTorrent
+  | MegaBlastoise
+  deriving (Eq,Show,Read)
 
 --
 
-instance PokemonSpecies BuiltInSpecies where
-  revertToForm = id
+instance PokemonSpecies Pikachu where
+  baseStat BaseHP _ = 35
+  baseStat BaseAttack _ = 55
+  baseStat BaseDefence _ = 40
+  baseStat BaseSAttack  _ = 50
+  baseStat BaseSDefence _ = 50
+  baseStat BaseSpeed _ = 90
+  ability _ = Static
+  weight _ = 6.0
+  typeOfPokemon _ = [Electric]
+  genderRatio _ = male7to1
 
-  baseAttack Aerodactyl = 105
-  baseAttack Aggron = 110
-  baseAttack Alakazam = 50
-  baseAttack Arcanine = 110
-  baseAttack Archeops = 140
-  baseAttack Armaldo = 125
-  baseAttack Blastoise = 83
-  baseAttack Braviary = 123
-  baseAttack Chandelure = 55
-  baseAttack Charizard = 84
-  baseAttack Conkeldurr = 140
-  baseAttack Cradily = 81
-  baseAttack Dragonite = 134
-  baseAttack Excadrill = 135
-  baseAttack Exeggutor = 95
-  baseAttack Flygon = 100
-  baseAttack Garchomp = 130
-  baseAttack Glaceon = 60
-  baseAttack Gyarados = 125
-  baseAttack Haxorus = 147
-  baseAttack Hydreigon = 105
-  baseAttack Kingdra = 95
-  baseAttack Krookodile = 117
-  baseAttack Lapras = 85
-  baseAttack Lucario = 110
-  baseAttack Ludicolo = 70
-  baseAttack Machamp = 130
-  baseAttack Metagross = 135
-  baseAttack Milotic = 60
-  baseAttack Pikachu = 55
-  baseAttack Reuniclus = 65
-  baseAttack Roserade = 70
-  baseAttack Salamence = 135
-  baseAttack Sharpedo = 120
-  baseAttack Snorlax = 110
-  baseAttack Spiritomb = 92
-  baseAttack Starmie = 75
-  baseAttack Swampert = 110
-  baseAttack Togekiss = 50
-  baseAttack Venusaur = 82
-  baseAttack Volcarona = 60
-  baseAttack Walrein = 80
-  
-  baseDefence Aerodactyl = 65
-  baseDefence Aggron = 180
-  baseDefence Alakazam = 45
-  baseDefence Arcanine = 80
-  baseDefence Archeops = 65
-  baseDefence Armaldo = 100
-  baseDefence Blastoise = 100
-  baseDefence Braviary = 75
-  baseDefence Chandelure = 90
-  baseDefence Charizard = 78
-  baseDefence Conkeldurr = 95
-  baseDefence Cradily = 97
-  baseDefence Dragonite = 95
-  baseDefence Excadrill = 60
-  baseDefence Exeggutor = 85
-  baseDefence Flygon = 80
-  baseDefence Garchomp = 95
-  baseDefence Glaceon = 110
-  baseDefence Gyarados = 79
-  baseDefence Haxorus = 90
-  baseDefence Hydreigon = 90
-  baseDefence Kingdra = 95
-  baseDefence Krookodile = 80
-  baseDefence Lapras = 80
-  baseDefence Lucario = 70
-  baseDefence Ludicolo = 70
-  baseDefence Machamp = 80
-  baseDefence Metagross = 130
-  baseDefence Milotic = 79
-  baseDefence Pikachu = 40
-  baseDefence Reuniclus = 75
-  baseDefence Roserade = 65
-  baseDefence Salamence = 80
-  baseDefence Sharpedo = 40
-  baseDefence Snorlax = 65
-  baseDefence Spiritomb = 108
-  baseDefence Starmie = 85
-  baseDefence Swampert = 90
-  baseDefence Togekiss = 95
-  baseDefence Venusaur = 83
-  baseDefence Volcarona = 65
-  baseDefence Walrein = 90
-  
-  baseHp Aerodactyl = 80
-  baseHp Aggron = 70
-  baseHp Alakazam = 55
-  baseHp Arcanine = 90
-  baseHp Archeops = 75
-  baseHp Armaldo = 75
-  baseHp Blastoise = 79
-  baseHp Braviary = 100
-  baseHp Chandelure = 60
-  baseHp Charizard = 78
-  baseHp Conkeldurr = 105
-  baseHp Cradily = 86
-  baseHp Dragonite = 91
-  baseHp Excadrill = 110
-  baseHp Exeggutor = 95
-  baseHp Flygon = 80
-  baseHp Garchomp = 108
-  baseHp Glaceon = 65
-  baseHp Gyarados = 95
-  baseHp Haxorus = 76
-  baseHp Hydreigon = 92
-  baseHp Kingdra = 75
-  baseHp Krookodile = 95
-  baseHp Lapras = 130
-  baseHp Lucario = 70
-  baseHp Ludicolo = 80
-  baseHp Machamp = 90
-  baseHp Metagross = 80
-  baseHp Milotic = 95
-  baseHp Pikachu = 35
-  baseHp Reuniclus = 110
-  baseHp Roserade = 60
-  baseHp Salamence = 95
-  baseHp Sharpedo = 70
-  baseHp Snorlax = 160
-  baseHp Spiritomb = 50
-  baseHp Starmie = 60
-  baseHp Swampert = 100
-  baseHp Togekiss = 85
-  baseHp Venusaur = 80
-  baseHp Volcarona = 85
-  baseHp Walrein = 110
-  
-  baseSAttack Aerodactyl = 60
-  baseSAttack Aggron = 60
-  baseSAttack Alakazam = 135
-  baseSAttack Arcanine = 100
-  baseSAttack Archeops = 112
-  baseSAttack Armaldo = 70
-  baseSAttack Blastoise = 85
-  baseSAttack Braviary = 57
-  baseSAttack Chandelure = 145
-  baseSAttack Charizard = 109
-  baseSAttack Conkeldurr = 55
-  baseSAttack Cradily = 81
-  baseSAttack Dragonite = 100
-  baseSAttack Excadrill = 50
-  baseSAttack Exeggutor = 125
-  baseSAttack Flygon = 80
-  baseSAttack Garchomp = 80
-  baseSAttack Glaceon = 130
-  baseSAttack Gyarados = 60
-  baseSAttack Haxorus = 60
-  baseSAttack Hydreigon = 125
-  baseSAttack Kingdra = 95
-  baseSAttack Krookodile = 65
-  baseSAttack Lapras = 85
-  baseSAttack Lucario = 115
-  baseSAttack Ludicolo = 90
-  baseSAttack Machamp = 65
-  baseSAttack Metagross = 95
-  baseSAttack Milotic = 100
-  baseSAttack Pikachu = 50
-  baseSAttack Reuniclus = 125
-  baseSAttack Roserade = 125
-  baseSAttack Salamence = 110
-  baseSAttack Sharpedo = 95
-  baseSAttack Snorlax = 65
-  baseSAttack Spiritomb = 92
-  baseSAttack Starmie = 100
-  baseSAttack Swampert = 85
-  baseSAttack Togekiss = 120
-  baseSAttack Venusaur = 100
-  baseSAttack Volcarona = 135
-  baseSAttack Walrein = 95
-  
-  baseSDefence Aerodactyl = 75
-  baseSDefence Aggron = 60
-  baseSDefence Alakazam = 95
-  baseSDefence Arcanine = 80
-  baseSDefence Archeops = 65
-  baseSDefence Armaldo = 80
-  baseSDefence Blastoise = 105
-  baseSDefence Braviary = 75
-  baseSDefence Chandelure = 90
-  baseSDefence Charizard = 85
-  baseSDefence Conkeldurr = 65
-  baseSDefence Cradily = 107
-  baseSDefence Dragonite = 100
-  baseSDefence Excadrill = 65
-  baseSDefence Exeggutor = 75
-  baseSDefence Flygon = 80
-  baseSDefence Garchomp = 85
-  baseSDefence Glaceon = 95
-  baseSDefence Gyarados = 100
-  baseSDefence Haxorus = 70
-  baseSDefence Hydreigon = 90
-  baseSDefence Kingdra = 95
-  baseSDefence Krookodile = 70
-  baseSDefence Lapras = 95
-  baseSDefence Lucario = 70
-  baseSDefence Ludicolo = 100
-  baseSDefence Machamp = 85
-  baseSDefence Metagross = 90
-  baseSDefence Milotic = 125
-  baseSDefence Pikachu = 50
-  baseSDefence Reuniclus = 85
-  baseSDefence Roserade = 105
-  baseSDefence Salamence = 80
-  baseSDefence Sharpedo = 40
-  baseSDefence Snorlax = 110
-  baseSDefence Spiritomb = 108
-  baseSDefence Starmie = 85
-  baseSDefence Swampert = 90
-  baseSDefence Togekiss = 115
-  baseSDefence Venusaur = 100
-  baseSDefence Volcarona = 105
-  baseSDefence Walrein = 90
-  
-  baseSpeed Aerodactyl = 130
-  baseSpeed Aggron = 50
-  baseSpeed Alakazam = 120
-  baseSpeed Arcanine = 95
-  baseSpeed Archeops = 110
-  baseSpeed Armaldo = 45
-  baseSpeed Blastoise = 78
-  baseSpeed Braviary = 80
-  baseSpeed Chandelure = 80
-  baseSpeed Charizard = 100
-  baseSpeed Conkeldurr = 45
-  baseSpeed Cradily = 43
-  baseSpeed Dragonite = 80
-  baseSpeed Excadrill = 88
-  baseSpeed Exeggutor = 55
-  baseSpeed Flygon = 100
-  baseSpeed Garchomp = 102
-  baseSpeed Glaceon = 65
-  baseSpeed Gyarados = 81
-  baseSpeed Haxorus = 97
-  baseSpeed Hydreigon = 98
-  baseSpeed Kingdra = 85
-  baseSpeed Krookodile = 92
-  baseSpeed Lapras = 60
-  baseSpeed Lucario = 90
-  baseSpeed Ludicolo = 70
-  baseSpeed Machamp = 55
-  baseSpeed Metagross = 70
-  baseSpeed Milotic = 81
-  baseSpeed Pikachu = 90
-  baseSpeed Reuniclus = 30
-  baseSpeed Roserade = 90
-  baseSpeed Salamence = 100
-  baseSpeed Sharpedo = 95
-  baseSpeed Snorlax = 30
-  baseSpeed Spiritomb = 35
-  baseSpeed Starmie = 115
-  baseSpeed Swampert = 60
-  baseSpeed Togekiss = 80
-  baseSpeed Venusaur = 80
-  baseSpeed Volcarona = 100
-  baseSpeed Walrein = 65
-  
+instance PokemonSpecies Lapras where
+  baseStat BaseHP _ = 130
+  baseStat BaseAttack _ = 85
+  baseStat BaseDefence _ = 80
+  baseStat BaseSAttack _ = 85
+  baseStat BaseSdefence _ = 95
+  baseStat BaseSpeed _ = 60
+  weight _ = 220.0
+  typeOfPokemon = [Water,Ice]
+  ability Lapras'withWaterAbsorb = WaterAbsorb
+  ability Lapras'withShellArmor = ShellArmor
+  genderRatio = evenRatio
+
+instance PokemonSpecies Snorlax where
+  baseStat BaseAttack _ = 110
+  baseStat BaseDefence _ = 65
+  baseStat BaseHP _ = 160
+  baseStat BaseSAttack _ = 65
+  baseStat BaseSDefence _ = 110
+  baseStat BaseSpeed _ = 30
+  genderRatio _ = male7to1
+  ability Snorlax'withImmunity = Immunity
+  ability Snorlax'withThickFat = ThickFat
+  typeOfPokemon _ = [Normal]
+  weight _ = 460.0
+
+instance PokemonSpecies Venusaur where
+  baseStat BaseAttack _ = 82
+  baseStat BaseDefence _ = 83
+  baseStat BaseHP _ = 80
+  baseStat BaseSAttack _ = 100
+  baseStat BaseSDefence _ = 100
+  baseStat BaseSpeed _ = 80
+  genderRatio _ = male7to1
+  ability _ = Overgrow
+  typeOfPokemon _ = [Grass,Poison]
+  weight _ = 100.0
+
+instance PokemonSpecies Charizard where
+  baseStat BaseAttack _ = 84
+  baseStat BaseDefence _ = 78
+  baseStat BaseHP _ = 78
+  baseStat BaseSAttack _ = 109
+  baseStat BaseSDefence _ = 85
+  baseStat BaseSpeed _ = 100
+  genderRatio _ = male7to1
+  ability _ = Blaze
+  typeOfPokemon _ = [Fire,Flying]
+  weight _ = 90.5
+
+instance PokemonSpecies Blastoise where
+  baseStat BaseAttack _ = 83
+  baseStat BaseDefence _ = 100
+  baseStat BaseDefence Lapras = 80
+  baseStat BaseHP _ = 79
+  baseStat BaseSAttack _ = 85
+  baseStat BaseSDefence _ = 105
+  baseStat BaseSpeed _ = 78
+  genderRatio _ = male7to1
+  ability _ = Torrent
+  typeOfPokemon _ = [Water]
+  weight _ = 85.5
+
+-----
+
+instance PokemonAttributes BuiltInPokemon where
+  baseStat stat (RedPkmn pkmn) = baseStat stat pkmn
+  baseStat stat (BluePkmn pkmn) = baseStat stat pkmn
+  baseStat stat (LancePkmn pkmn) = baseStat stat pkmn
+  baseStat stat (StevenPkmn pkmn) = baseStat stat pkmn
+  baseStat stat (WallacePkmn pkmn) = baseStat stat pkmn
+  baseStat stat (CynthiaPkmn pkmn) = baseStat stat pkmn
+  baseStat stat (AlderPkmn pkmn) = baseStat stat pkmn
+  typeOfPokemon (RedPkmn pkmn) = typeOfPokemon pkmn
+  typeOfPokemon (BluePkmn pkmn) = typeOfPokemon pkmn
+  typeOfPokemon (LancePkmn pkmn) = typeOfPokemon pkmn
+  typeOfPokemon (StevenPkmn pkmn) = typeOfPokemon pkmn
+  typeOfPokemon (WallacePkmn pkmn) = typeOfPokemon pkmn
+  typeOfPokemon (CynthiaPkmn pkmn) = typeOfPokemon pkmn
+  typeOfPokemon (AlderPkmn pkmn) = typeOfPokemon pkmn
+  genderRatio (RedPkmn pkmn) = genderRatio pkmn
+  genderRatio (BluePkmn pkmn) = genderRatio pkmn
+  genderRatio (LancePkmn pkmn) = genderRatio pkmn
+  genderRatio (StevenPkmn pkmn) = genderRatio pkmn
+  genderRatio (WallacePkmn pkmn) = genderRatio pkmn
+  genderRatio (CynthiaPkmn pkmn) = genderRatio pkmn
+  genderRatio (AlderPkmn pkmn) = genderRatio pkmn
+  possibleAbilities (RedPkmn pkmn) = possibleAbilities pkmn
+  possibleAbilities (BluePkmn pkmn) = possibleAbilities pkmn
+  possibleAbilities (LancePkmn pkmn) = possibleAbilities pkmn
+  possibleAbilities (StevenPkmn pkmn) = possibleAbilities pkmn
+  possibleAbilities (WallacePkmn pkmn) = possibleAbilities pkmn
+  possibleAbilities (CynthiaPkmn pkmn) = possibleAbilities pkmn
+  possibleAbilities (AlderPkmn pkmn) = possibleAbilities pkmn
+  weight (RedPkmn pkmn) = weight pkmn
+  weight (BluePkmn pkmn) = weight pkmn
+  weight (LancePkmn pkmn) = weight pkmn
+  weight (StevenPkmn pkmn) = weight pkmn
+  weight (WallacePkmn pkmn) = weight pkmn
+  weight (CynthiaPkmn pkmn) = weight pkmn
+  weight (AlderPkmn pkmn) = weight pkmn
+
+
+
+instance PokemonAttributes Blue'sPokemon where
+  baseStat BaseAttack Aerodactyl = 105
+  baseStat BaseAttack Alakazam = 50
+  baseStat BaseAttack Arcanine = 110
+  baseStat BaseAttack Exeggutor = 95
+  baseStat BaseAttack Gyarados = 125
+  baseStat BaseAttack Machamp = 130
+  baseStat BaseDefence Aerodactyl = 65
+  baseStat BaseDefence Alakazam = 45
+  baseStat BaseDefence Arcanine = 80
+  baseStat BaseDefence Exeggutor = 85
+  baseStat BaseDefence Gyarados = 79
+  baseStat BaseDefence Machamp = 80
+  baseStat BaseHP Aerodactyl = 80
+  baseStat BaseHP Alakazam = 55
+  baseStat BaseHP Arcanine = 90
+  baseStat BaseHP Exeggutor = 95
+  baseStat BaseHP Gyarados = 95
+  baseStat BaseHP Machamp = 90
+  baseStat BaseSAttack Aerodactyl = 60
+  baseStat BaseSAttack Alakazam = 135
+  baseStat BaseSAttack Arcanine = 100
+  baseStat BaseSAttack Exeggutor = 125
+  baseStat BaseSAttack Gyarados = 60
+  baseStat BaseSAttack Machamp = 65
+  baseStat BaseSDefence Aerodactyl = 75
+  baseStat BaseSDefence Alakazam = 95
+  baseStat BaseSDefence Arcanine = 80
+  baseStat BaseSDefence Exeggutor = 75
+  baseStat BaseSDefence Gyarados = 100
+  baseStat BaseSDefence Machamp = 85
+  baseStat BaseSpeed Aerodactyl = 130
+  baseStat BaseSpeed Alakazam = 120
+  baseStat BaseSpeed Arcanine = 95
+  baseStat BaseSpeed Exeggutor = 55
+  baseStat BaseSpeed Gyarados = 81
+  baseStat BaseSpeed Machamp = 55
   genderRatio Aerodactyl = Male7to1
-  genderRatio Aggron = EvenRatio
   genderRatio Alakazam = Male3to1
   genderRatio Arcanine = Male3to1
-  genderRatio Archeops = Male7to1
-  genderRatio Armaldo = Male7to1
-  genderRatio Blastoise = Male7to1
-  genderRatio Braviary = AlwaysMale
-  genderRatio Chandelure = EvenRatio
-  genderRatio Charizard = Male7to1
-  genderRatio Conkeldurr = Male3to1
-  genderRatio Cradily = Male7to1
-  genderRatio Dragonite = EvenRatio
-  genderRatio Excadrill = EvenRatio
   genderRatio Exeggutor = EvenRatio
-  genderRatio Flygon = EvenRatio
-  genderRatio Garchomp = EvenRatio
-  genderRatio Glaceon = Male7to1
   genderRatio Gyarados = EvenRatio
+  genderRatio Machamp = Male3to1
+  possibleAbilities Aerodactyl = [RockHead,Pressure]
+  possibleAbilities Alakazam = [Synchronize,InnerFocus]
+  possibleAbilities Arcanine = [Intimidate,FlashFire]
+  possibleAbilities Exeggutor = [Chlorophyll]
+  possibleAbilities Gyarados = [Intimidate]
+  possibleAbilities Machamp = [Guts,NoGuard]
+  typeOfPokemon Aerodactyl = [Rock,Flying]
+  typeOfPokemon Alakazam = [Psychic]
+  typeOfPokemon Arcanine = [Fire]
+  typeOfPokemon Exeggutor = [Grass,Psychic]
+  typeOfPokemon Gyarados = [Water,Flying]
+  typeOfPokemon Machamp = [Fighting]
+  weight Aerodactyl = 59.0
+  weight Alakazam = 48.0
+  weight Arcanine = 155.0
+  weight Exeggutor = 120.0
+  weight Gyarados = 235.0
+  weight Machamp = 130.0
+
+instance PokemonAttributes Lance'sPokemon where
+  baseStat BaseAttack Dragonite = 134
+  baseStat BaseAttack Flygon = 100
+  baseStat BaseAttack Haxorus = 147
+  baseStat BaseAttack Hydreigon = 105
+  baseStat BaseAttack Kingdra = 95
+  baseStat BaseAttack Salamence = 135
+  baseStat BaseDefence Dragonite = 95
+  baseStat BaseDefence Flygon = 80
+  baseStat BaseDefence Haxorus = 90
+  baseStat BaseDefence Hydreigon = 90
+  baseStat BaseDefence Kingdra = 95
+  baseStat BaseDefence Salamence = 80
+  baseStat BaseHP Dragonite = 91
+  baseStat BaseHP Flygon = 80
+  baseStat BaseHP Haxorus = 76
+  baseStat BaseHP Hydreigon = 92
+  baseStat BaseHP Kingdra = 75
+  baseStat BaseHP Salamence = 95
+  baseStat BaseSAttack Dragonite = 100
+  baseStat BaseSAttack Flygon = 80
+  baseStat BaseSAttack Haxorus = 60
+  baseStat BaseSAttack Hydreigon = 125
+  baseStat BaseSAttack Kingdra = 95
+  baseStat BaseSAttack Salamence = 110
+  baseStat BaseSDefence Dragonite = 100
+  baseStat BaseSDefence Flygon = 80
+  baseStat BaseSDefence Haxorus = 70
+  baseStat BaseSDefence Hydreigon = 90
+  baseStat BaseSDefence Kingdra = 95
+  baseStat BaseSDefence Salamence = 80
+  baseStat BaseSpeed Dragonite = 80
+  baseStat BaseSpeed Flygon = 100
+  baseStat BaseSpeed Haxorus = 97
+  baseStat BaseSpeed Hydreigon = 98
+  baseStat BaseSpeed Kingdra = 85
+  baseStat BaseSpeed Salamence = 100
+  genderRatio Dragonite = EvenRatio
+  genderRatio Flygon = EvenRatio
   genderRatio Haxorus = EvenRatio
   genderRatio Hydreigon = EvenRatio
   genderRatio Kingdra = EvenRatio
-  genderRatio Krookodile = EvenRatio
-  genderRatio Lapras = EvenRatio
-  genderRatio Lucario = Male7to1
-  genderRatio Ludicolo = EvenRatio
-  genderRatio Machamp = Male3to1
-  genderRatio Metagross = AlwaysGenderless
-  genderRatio Milotic = EvenRatio
-  genderRatio Pikachu = Male7to1
-  genderRatio Reuniclus = EvenRatio
-  genderRatio Roserade = EvenRatio
   genderRatio Salamence = Male7to1
-  genderRatio Sharpedo = Male7to1
-  genderRatio Snorlax = Male7to1
-  genderRatio Spiritomb = Male7to1
-  genderRatio Starmie = AlwaysGenderless
-  genderRatio Swampert = Male7to1
-  genderRatio Togekiss = Male7to1
-  genderRatio Venusaur = Male7to1
-  genderRatio Volcarona = Male7to1
-  genderRatio Walrein = Male7to1
-  
-  typeOfPokemon Aerodactyl = [Rock,Flying]
-  typeOfPokemon Aggron = [Steel,Rock]
-  typeOfPokemon Alakazam = [Psychic]
-  typeOfPokemon Arcanine = [Fire]
-  typeOfPokemon Archeops = [Rock,Flying]
-  typeOfPokemon Armaldo = [Rock,Bug]
-  typeOfPokemon Blastoise = [Water]
-  typeOfPokemon Braviary = [Normal,Flying]
-  typeOfPokemon Chandelure = [Ghost,Fire]
-  typeOfPokemon Charizard = [Fire,Flying]
-  typeOfPokemon Conkeldurr = [Fighting]
-  typeOfPokemon Cradily = [Rock,Grass]
+  possibleAbilities Dragonite = [InnerFocus]
+  possibleAbilities Flygon = [Levitate]
+  possibleAbilities Haxorus = [Rivalry,MoldBreaker]
+  possibleAbilities Hydreigon = [Levitate]
+  possibleAbilities Kingdra = [SwiftSwim,Sniper]
+  possibleAbilities Salamence = [Intimidate]
   typeOfPokemon Dragonite = [Dragon,Flying]
-  typeOfPokemon Excadrill = [Ground,Steel]
-  typeOfPokemon Exeggutor = [Grass,Psychic]
   typeOfPokemon Flygon = [Ground,Dragon]
-  typeOfPokemon Garchomp = [Dragon,Ground]
-  typeOfPokemon Glaceon = [Ice]
-  typeOfPokemon Gyarados = [Water,Flying]
   typeOfPokemon Haxorus = [Dragon]
   typeOfPokemon Hydreigon = [Dark,Dragon]
   typeOfPokemon Kingdra = [Water,Dragon]
-  typeOfPokemon Krookodile = [Ground,Dark]
-  typeOfPokemon Lapras = [Water,Ice]
-  typeOfPokemon Lucario = [Fighting,Steel]
-  typeOfPokemon Ludicolo = [Water,Grass]
-  typeOfPokemon Machamp = [Fighting]
-  typeOfPokemon Metagross = [Steel,Psychic]
-  typeOfPokemon Milotic = [Water]
-  typeOfPokemon Pikachu = [Electric]
-  typeOfPokemon Reuniclus = [Psychic]
-  typeOfPokemon Roserade = [Grass,Poison]
   typeOfPokemon Salamence = [Dragon,Flying]
-  typeOfPokemon Sharpedo = [Water,Dark]
-  typeOfPokemon Snorlax = [Normal]
-  typeOfPokemon Spiritomb = [Ghost,Dark]
-  typeOfPokemon Starmie = [Water,Psychic]
-  typeOfPokemon Swampert = [Water,Ground]
-  typeOfPokemon Togekiss = [Fairy,Flying]
-  typeOfPokemon Venusaur = [Grass,Poison]
-  typeOfPokemon Volcarona = [Bug,Fire]
-  typeOfPokemon Walrein = [Ice,Water]
-  
-  weight Aerodactyl = 59.0
-  weight Aggron = 360.0
-  weight Alakazam = 48.0
-  weight Arcanine = 155.0
-  weight Archeops = 32.0
-  weight Armaldo = 68.2
-  weight Blastoise = 85.5
-  weight Braviary = 41.0
-  weight Chandelure = 34.3
-  weight Charizard = 199.5
-  weight Conkeldurr = 87.0
-  weight Cradily = 60.4
   weight Dragonite = 210.0
-  weight Excadrill = 40.4
-  weight Exeggutor = 120.0
   weight Flygon = 82.0
-  weight Garchomp = 95.0
-  weight Glaceon = 25.9
-  weight Gyarados = 235.0
   weight Haxorus = 105.5
   weight Hydreigon = 160.0
   weight Kingdra = 152.0
-  weight Krookodile = 96.3
-  weight Lapras = 220.0
-  weight Lucario = 54.0
-  weight Ludicolo = 55.0
-  weight Machamp = 130.0
-  weight Metagross = 550.0
-  weight Milotic = 162.0
-  weight Pikachu = 6.0
-  weight Reuniclus = 20.1
-  weight Roserade = 14.5
   weight Salamence = 102.6
-  weight Sharpedo = 88.8
-  weight Snorlax = 460.0
-  weight Spiritomb = 108.0
-  weight Starmie = 80.0
-  weight Swampert = 81.9
-  weight Togekiss = 38.0
-  weight Venusaur = 100.0
-  weight Volcarona = 46.0
-  weight Walrein = 150.6
-  
-  possibleAbilities Pikachu = [Static]
-  possibleAbilities Lapras = [WaterAbsorb,ShellArmor]
-  possibleAbilities Snorlax = [Immunity,ThickFat]
-  possibleAbilities Venusaur = [Overgrow]
-  possibleAbilities Charizard = [Blaze]
-  possibleAbilities Blastoise = [Torrent]
-  possibleAbilities Aerodactyl = [RockHead,Pressure]
-  possibleAbilities Machamp = [Guts,NoGuard]
-  possibleAbilities Alakazam = [Synchronize,InnerFocus]
-  possibleAbilities Exeggutor = [Chlorophyll]
-  possibleAbilities Arcanine = [Intimidate,FlashFire]
-  possibleAbilities Gyarados = [Intimidate]
-  possibleAbilities Dragonite = [InnerFocus]
-  possibleAbilities Salamence = [Intimidate]
-  possibleAbilities Kingdra = [SwiftSwim,Sniper]
-  possibleAbilities Haxorus = [Rivalry,MoldBreaker]
-  possibleAbilities Hydreigon = [Levitate]
-  possibleAbilities Flygon = [Levitate]
-  possibleAbilities Metagross = [ClearBody]
+
+instance PokemonAttributes Steven'sPokemon where
+  baseStat BaseAttack Aggron = 110
+  baseStat BaseAttack Archeops = 140
+  baseStat BaseAttack Armaldo = 125
+  baseStat BaseAttack Cradily = 81
+  baseStat BaseAttack Excadrill = 135
+  baseStat BaseAttack Metagross = 135
+  baseStat BaseDefence Aggron = 180
+  baseStat BaseDefence Archeops = 65
+  baseStat BaseDefence Armaldo = 100
+  baseStat BaseDefence Cradily = 97
+  baseStat BaseDefence Excadrill = 60
+  baseStat BaseDefence Metagross = 130
+  baseStat BaseHP Aggron = 70
+  baseStat BaseHP Archeops = 75
+  baseStat BaseHP Armaldo = 75
+  baseStat BaseHP Cradily = 86
+  baseStat BaseHP Excadrill = 110
+  baseStat BaseHP Metagross = 80
+  baseStat BaseSAttack Aggron = 60
+  baseStat BaseSAttack Archeops = 112
+  baseStat BaseSAttack Armaldo = 70
+  baseStat BaseSAttack Cradily = 81
+  baseStat BaseSAttack Excadrill = 50
+  baseStat BaseSAttack Metagross = 95
+  baseStat BaseSDefence Aggron = 60
+  baseStat BaseSDefence Archeops = 65
+  baseStat BaseSDefence Armaldo = 80
+  baseStat BaseSDefence Cradily = 107
+  baseStat BaseSDefence Excadrill = 65
+  baseStat BaseSDefence Metagross = 90
+  baseStat BaseSpeed Aggron = 50
+  baseStat BaseSpeed Archeops = 110
+  baseStat BaseSpeed Armaldo = 45
+  baseStat BaseSpeed Cradily = 43
+  baseStat BaseSpeed Excadrill = 88
+  baseStat BaseSpeed Metagross = 70
+  genderRatio Aggron = EvenRatio
+  genderRatio Archeops = Male7to1
+  genderRatio Armaldo = Male7to1
+  genderRatio Cradily = Male7to1
+  genderRatio Excadrill = EvenRatio
+  genderRatio Metagross = AlwaysGenderless
   possibleAbilities Aggron = [Sturdy,RockHead]
-  possibleAbilities Excadrill = [SandRush,SandForce]
   possibleAbilities Archeops = [Defeatist]
-  possibleAbilities Cradily = [SuctionCups]
   possibleAbilities Armaldo = [BattleArmor]
+  possibleAbilities Cradily = [SuctionCups]
+  possibleAbilities Excadrill = [SandRush,SandForce]
+  possibleAbilities Metagross = [ClearBody]
+  typeOfPokemon Aggron = [Steel,Rock]
+  typeOfPokemon Archeops = [Rock,Flying]
+  typeOfPokemon Armaldo = [Rock,Bug]
+  typeOfPokemon Cradily = [Rock,Grass]
+  typeOfPokemon Excadrill = [Ground,Steel]
+  typeOfPokemon Metagross = [Steel,Psychic]
+  weight Aggron = 360.0
+  weight Archeops = 32.0
+  weight Armaldo = 68.2
+  weight Cradily = 60.4
+  weight Excadrill = 40.4
+  weight Metagross = 550.0
+
+instance PokemonAttributes Wallace'sPokemon where
+  baseStat BaseAttack Ludicolo = 70
+  baseStat BaseAttack Milotic = 60
+  baseStat BaseAttack Sharpedo = 120
+  baseStat BaseAttack Starmie = 75
+  baseStat BaseAttack Swampert = 110
+  baseStat BaseAttack Walrein = 80
+  baseStat BaseDefence Ludicolo = 70
+  baseStat BaseDefence Milotic = 79
+  baseStat BaseDefence Sharpedo = 40
+  baseStat BaseDefence Starmie = 85
+  baseStat BaseDefence Swampert = 90
+  baseStat BaseDefence Walrein = 90
+  baseStat BaseHP Ludicolo = 80
+  baseStat BaseHP Milotic = 95
+  baseStat BaseHP Sharpedo = 70
+  baseStat BaseHP Starmie = 60
+  baseStat BaseHP Swampert = 100
+  baseStat BaseHP Walrein = 110
+  baseStat BaseSAttack Ludicolo = 90
+  baseStat BaseSAttack Milotic = 100
+  baseStat BaseSAttack Sharpedo = 95
+  baseStat BaseSAttack Starmie = 100
+  baseStat BaseSAttack Swampert = 85
+  baseStat BaseSAttack Walrein = 95
+  baseStat BaseSDefence Ludicolo = 100
+  baseStat BaseSDefence Milotic = 125
+  baseStat BaseSDefence Sharpedo = 40
+  baseStat BaseSDefence Starmie = 85
+  baseStat BaseSDefence Swampert = 90
+  baseStat BaseSDefence Walrein = 90
+  baseStat BaseSpeed Ludicolo = 70
+  baseStat BaseSpeed Milotic = 81
+  baseStat BaseSpeed Sharpedo = 95
+  baseStat BaseSpeed Starmie = 115
+  baseStat BaseSpeed Swampert = 60
+  baseStat BaseSpeed Walrein = 65
+  genderRatio Ludicolo = EvenRatio
+  genderRatio Milotic = EvenRatio
+  genderRatio Sharpedo = Male7to1
+  genderRatio Starmie = AlwaysGenderless
+  genderRatio Swampert = Male7to1
+  genderRatio Walrein = Male7to1
+  possibleAbilities Ludicolo = [SwiftSwim,RainDish]
   possibleAbilities Milotic = [MarvelScale]
   possibleAbilities Sharpedo = [RoughSkin]
-  possibleAbilities Walrein = [ThickFat,IceBody]
-  possibleAbilities Ludicolo = [SwiftSwim,RainDish]
-  possibleAbilities Swampert = [Torrent]
   possibleAbilities Starmie = [Illuminate,NaturalCure]
+  possibleAbilities Swampert = [Torrent]
+  possibleAbilities Walrein = [ThickFat,IceBody]
+  typeOfPokemon Ludicolo = [Water,Grass]
+  typeOfPokemon Milotic = [Water]
+  typeOfPokemon Sharpedo = [Water,Dark]
+  typeOfPokemon Starmie = [Water,Psychic]
+  typeOfPokemon Swampert = [Water,Ground]
+  typeOfPokemon Walrein = [Ice,Water]
+  weight Ludicolo = 55.0
+  weight Milotic = 162.0
+  weight Sharpedo = 88.8
+  weight Starmie = 80.0
+  weight Swampert = 81.9
+  weight Walrein = 150.6
+
+instance PokemonAttributes Cynthia'sPokemon where
+  baseStat BaseAttack Garchomp = 130
+  baseStat BaseAttack Glaceon = 60
+  baseStat BaseAttack Lucario = 110
+  baseStat BaseAttack Roserade = 70
+  baseStat BaseAttack Spiritomb = 92
+  baseStat BaseAttack Togekiss = 50
+  baseStat BaseDefence Garchomp = 95
+  baseStat BaseDefence Glaceon = 110
+  baseStat BaseDefence Lucario = 70
+  baseStat BaseDefence Roserade = 65
+  baseStat BaseDefence Spiritomb = 108
+  baseStat BaseDefence Togekiss = 95
+  baseStat BaseHP Garchomp = 108
+  baseStat BaseHP Glaceon = 65
+  baseStat BaseHP Lucario = 70
+  baseStat BaseHP Roserade = 60
+  baseStat BaseHP Spiritomb = 50
+  baseStat BaseHP Togekiss = 85
+  baseStat BaseSAttack Garchomp = 80
+  baseStat BaseSAttack Glaceon = 130
+  baseStat BaseSAttack Lucario = 115
+  baseStat BaseSAttack Roserade = 125
+  baseStat BaseSAttack Spiritomb = 92
+  baseStat BaseSAttack Togekiss = 120
+  baseStat BaseSDefence Garchomp = 85
+  baseStat BaseSDefence Glaceon = 95
+  baseStat BaseSDefence Lucario = 70
+  baseStat BaseSDefence Roserade = 105
+  baseStat BaseSDefence Spiritomb = 108
+  baseStat BaseSDefence Togekiss = 115
+  baseStat BaseSpeed Garchomp = 102
+  baseStat BaseSpeed Glaceon = 65
+  baseStat BaseSpeed Lucario = 90
+  baseStat BaseSpeed Roserade = 90
+  baseStat BaseSpeed Spiritomb = 35
+  baseStat BaseSpeed Togekiss = 80
+  genderRatio Garchomp = EvenRatio
+  genderRatio Glaceon = Male7to1
+  genderRatio Lucario = Male7to1
+  genderRatio Roserade = EvenRatio
+  genderRatio Spiritomb = Male7to1
+  genderRatio Togekiss = Male7to1
   possibleAbilities Garchomp = [SandVeil]
-  possibleAbilities Spiritomb = [Pressure]
-  possibleAbilities Roserade = [NaturalCure,PoisonPoint]
-  possibleAbilities Togekiss = [Hustle,SereneGrace]
-  possibleAbilities Lucario = [Steadfast,InnerFocus]
   possibleAbilities Glaceon = [SnowCloak]
-  possibleAbilities Volcarona = [FlameBody]
-  possibleAbilities Conkeldurr = [Guts,SheerForce]
-  possibleAbilities Reuniclus = [Overcoat,MagicGuard]
-  possibleAbilities Krookodile = [Intimidate,Moxie]
-  possibleAbilities Chandelure = [FlashFire,FlameBody]
+  possibleAbilities Lucario = [Steadfast,InnerFocus]
+  possibleAbilities Roserade = [NaturalCure,PoisonPoint]
+  possibleAbilities Spiritomb = [Pressure]
+  possibleAbilities Togekiss = [Hustle,SereneGrace]
+  typeOfPokemon Garchomp = [Dragon,Ground]
+  typeOfPokemon Glaceon = [Ice]
+  typeOfPokemon Lucario = [Fighting,Steel]
+  typeOfPokemon Roserade = [Grass,Poison]
+  typeOfPokemon Spiritomb = [Ghost,Dark]
+  typeOfPokemon Togekiss = [Fairy,Flying]
+  weight Garchomp = 95.0
+  weight Glaceon = 25.9
+  weight Lucario = 54.0
+  weight Roserade = 14.5
+  weight Spiritomb = 108.0
+  weight Togekiss = 38.0
+
+instance PokemonAttributes Alder'sPokemon where
+  baseStat BaseAttack Braviary = 123
+  baseStat BaseAttack Chandelure = 55
+  baseStat BaseAttack Conkeldurr = 140
+  baseStat BaseAttack Krookodile = 117
+  baseStat BaseAttack Reuniclus = 65
+  baseStat BaseAttack Volcarona = 60
+  baseStat BaseDefence Braviary = 75
+  baseStat BaseDefence Chandelure = 90
+  baseStat BaseDefence Conkeldurr = 95
+  baseStat BaseDefence Krookodile = 80
+  baseStat BaseDefence Reuniclus = 75
+  baseStat BaseDefence Volcarona = 65
+  baseStat BaseHP Braviary = 100
+  baseStat BaseHP Chandelure = 60
+  baseStat BaseHP Conkeldurr = 105
+  baseStat BaseHP Krookodile = 95
+  baseStat BaseHP Reuniclus = 110
+  baseStat BaseHP Volcarona = 85
+  baseStat BaseSAttack Braviary = 57
+  baseStat BaseSAttack Chandelure = 145
+  baseStat BaseSAttack Conkeldurr = 55
+  baseStat BaseSAttack Krookodile = 65
+  baseStat BaseSAttack Reuniclus = 125
+  baseStat BaseSAttack Volcarona = 135
+  baseStat BaseSDefence Braviary = 75
+  baseStat BaseSDefence Chandelure = 90
+  baseStat BaseSDefence Conkeldurr = 65
+  baseStat BaseSDefence Krookodile = 70
+  baseStat BaseSDefence Reuniclus = 85
+  baseStat BaseSDefence Volcarona = 105
+  baseStat BaseSpeed Braviary = 80
+  baseStat BaseSpeed Chandelure = 80
+  baseStat BaseSpeed Conkeldurr = 45
+  baseStat BaseSpeed Krookodile = 92
+  baseStat BaseSpeed Reuniclus = 30
+  baseStat BaseSpeed Volcarona = 100
+  genderRatio Braviary = AlwaysMale
+  genderRatio Chandelure = EvenRatio
+  genderRatio Conkeldurr = Male3to1
+  genderRatio Krookodile = EvenRatio
+  genderRatio Reuniclus = EvenRatio
+  genderRatio Volcarona = Male7to1
   possibleAbilities Braviary = [KeenEye,SheerForce]
-  
-  isPikachu Pikachu = True
-  isPikachu _ = False
-  
+  possibleAbilities Chandelure = [FlashFire,FlameBody]
+  possibleAbilities Conkeldurr = [Guts,SheerForce]
+  possibleAbilities Krookodile = [Intimidate,Moxie]
+  possibleAbilities Reuniclus = [Overcoat,MagicGuard]
+  possibleAbilities Volcarona = [FlameBody]
+  typeOfPokemon Braviary = [Normal,Flying]
+  typeOfPokemon Chandelure = [Ghost,Fire]
+  typeOfPokemon Conkeldurr = [Fighting]
+  typeOfPokemon Krookodile = [Ground,Dark]
+  typeOfPokemon Reuniclus = [Psychic]
+  typeOfPokemon Volcarona = [Bug,Fire]
+  weight Braviary = 41.0
+  weight Chandelure = 34.3
+  weight Conkeldurr = 87.0
+  weight Krookodile = 96.3
+  weight Reuniclus = 20.1
+  weight Volcarona = 46.0
