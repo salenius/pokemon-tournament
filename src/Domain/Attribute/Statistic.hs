@@ -13,8 +13,6 @@ data BaseStat =
 
 type Statistic = Int
 type Level = Int
-type IV = Int
-type EV = Int
 
 nature :: BaseStat -> Nature -> Double
 nature BaseAttack Lonely = 1.1
@@ -60,17 +58,3 @@ nature BaseSpeed Sassy = 0.9
 nature _ _ = 1
 
 
-statisticCalc :: BaseStat -> Int -> Level -> Nature -> IV -> EV -> Statistic
-statisticCalc BaseHP base level _ iv ev =
-  10 + level + floor division
-  where
-    division = (fromIntegral top) / 100
-    top = level * base + iv * 2 + floor ev'
-    ev' = (sqrt $ fromIntegral ev) / 4
-statisticCalc stat base level nat iv ev =
-  floor . (*) (nature stat nat) . fromIntegral $ 5 + (floor division)
-  where
-    division = (fromIntegral top) / 100 :: Double
-    top = level * base + iv * 2 + floor ev'
-    ev' = (sqrt $ fromIntegral ev) / 4
-    
