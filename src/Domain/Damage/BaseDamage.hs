@@ -8,6 +8,7 @@ import Domain.Attribute.HP
 import Domain.Attribute.Counterparty
 import Domain.Attribute.Damage
 import Control.Lens
+import Data.Functor.Contravariant
 
 data BaseDamageMove battle =
   BaseDamageMove Int 
@@ -19,9 +20,13 @@ data BaseDamageMove battle =
 
 data AcrobaticsMove battle = AcrobaticsMove
   {
-    _acrobaticsUserHeldItem :: battle -> Maybe HeldItem
+    _acrobaticsPokemonHeldItem :: Counterparty -> battle -> Maybe HeldItem
   , _acrobaticsBasepower :: Int
   }
+
+instance Contravariant AcrobaticsMove where
+  contramap f a =
+    a {_acrobaticsPokemonHeldItem = \cp -> _acrobaticsPokemonHeldItem a cp . f}
 
 data AvalancheMove battle = AvalancheMove
   {
@@ -29,10 +34,17 @@ data AvalancheMove battle = AvalancheMove
     _avalancheBasepower :: Int
   }
 
+instance Contravariant AvalancheMove where
+  contramap f p = p {_avalanchePrevMove = _avalanchePrevMove p . f}
+
 newtype GrassKnotMove battle = GrassKnotMove
   {
     _grassKnotPokemonWeight :: Counterparty -> battle -> Double
   }
+
+instance Contravariant GrassKnotMove where
+  contramap f a =
+    a {_grassKnotPokemonWeight = \cp -> _grassKnotPokemonWeight a cp . f}
 
 data PaybackMove battle = PaybackMove
   {
@@ -40,11 +52,17 @@ data PaybackMove battle = PaybackMove
   , _paybackBasepower :: Int
   }
 
+instance Contravariant PaybackMove where
+  contramap f p = p {_paybackPrevMove = _paybackPrevMove p . f} 
+
 data WaterSpoutMove battle = WaterSpoutMove
   {
     _waterSpoutPokemonHp :: Counterparty -> battle -> HP,
     _waterSpoutBasepower :: Int
   }
+
+instance Contravariant WaterSpoutMove where
+  contramap f w = w {_waterSpoutPokemonHp = \cp -> _waterSpoutPokemonHp w cp . f}
 
 makeLenses ''AcrobaticsMove
 makeLenses ''AvalancheMove
@@ -53,12 +71,20 @@ makeLenses ''PaybackMove
 makeLenses ''WaterSpoutMove
 makePrisms ''BaseDamageMove
 
+instance Contravariant BaseDamageMove where
+  contramap f (BaseDamageMove x) = BaseDamageMove x
+  contramap f (Acrobatics a) = Acrobatics $ contramap f a
+  contramap f (Avalanche a) = Avalanche $ contramap f a
+  contramap f (GrassKnot a) = GrassKnot $ contramap f a
+  contramap f (Payback a) = Payback $ contramap f a
+  contramap f (WaterSpout a) = WaterSpout $ contramap f a
+
 reduce :: BaseDamageMove battle -> battle -> Damage
 reduce (BaseDamageMove x) _ = Damage . fromIntegral $ x
 reduce (Acrobatics a) b =
   Damage $
   fromIntegral $
-  case view acrobaticsUserHeldItem a b of
+  case view acrobaticsPokemonHeldItem a User b of
     Nothing        -> 2 * view acrobaticsBasepower a 
     Just FlyingGem -> 2 * view acrobaticsBasepower a
     Just _         -> view acrobaticsBasepower a
