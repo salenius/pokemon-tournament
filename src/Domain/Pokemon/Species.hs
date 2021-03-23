@@ -14,6 +14,7 @@ module Domain.Pokemon.Species (
   weight,
   genderRatio,
   TypeOfPokemon(),
+  getTypeOfPokemon,
   mkTypeOfPokemon,
   typeOfPokemonAsList,
   AsPokemonSpecies,
@@ -29,6 +30,9 @@ import Control.Lens
 
 newtype TypeOfPokemon =
   TypeOfPokemon [TypeOf] deriving (Eq,Show)
+
+getTypeOfPokemon :: TypeOfPokemon -> [TypeOf]
+getTypeOfPokemon (TypeOfPokemon t) = t
 
 data PokemonSpecies = PokemonSpecies
   {
