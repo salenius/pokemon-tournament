@@ -28,7 +28,7 @@ instance Contravariant TypeAdvantage where
                       _currentHeldItem = (\cp -> view currentHeldItem tp cp . f),
                       _typeOfPokemonInBattle = (\cp -> view typeOfPokemonInBattle tp cp . f)}
 
-reduce :: Monad m => DamageOps m -> TypeAdvantage battle -> battle -> m Damage
+reduce :: Monad m => DamageOps m -> TypeAdvantage battle -> battle -> m (TypeEffect, Damage)
 reduce damops typad btl = do
   let mvt = view typeOfMoveForAdvantage typad btl
   let trt = view typeOfPokemonInBattle typad Target btl
@@ -51,5 +51,5 @@ reduce damops typad btl = do
   -- Expert Beltin takia
   let uit = view currentHeldItem typad User btl
   let expb = view supereffectiveItemForUser typad eff uit
-  return $ Damage $ ber * ad * expb
+  return $ (eff, Damage $ ber * ad * expb)
   
