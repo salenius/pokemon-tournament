@@ -5,7 +5,17 @@ module Domain.Damage.Ratio (
   mkRatio,
   topOrBottom,
   TopOrBottom(),
- | Denominator
+  reduce
+                           ) where
+
+import Domain.Attribute.Counterparty
+import Domain.Attribute.CriticalHit
+import Domain.Attribute.ModifStat
+import Domain.Attribute.Damage
+import Control.Lens
+import Data.Functor
+
+data TopOrBottom = Numerator | Denominator
 
 data Ratio battle = Ratio
   {
