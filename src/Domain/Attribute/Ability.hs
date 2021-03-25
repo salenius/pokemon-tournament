@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Domain.Attribute.Ability where
 
 data Ability =
@@ -82,6 +84,19 @@ data Ability =
   | WaterVeil
   | WhiteSmoke
   deriving (Eq, Show, Read, Enum, Ord, Bounded)
+
+data IsMoldBreaker =
+  IsMoldBreaker
+  | IsTeravolt
+  | IsTurboblaze
+  deriving (Eq,Show)
+
+isMoldBreaker :: Ability -> Maybe IsMoldBreaker
+isMoldBreaker = \case
+  MoldBreaker -> Just IsMoldBreaker
+  Teravolt -> Just IsTeravolt
+  Turboblaze -> Just IsTurboblaze
+  _ -> Nothing
 
 allAbilities :: [Ability]
 allAbilities = enumFrom minAbility
