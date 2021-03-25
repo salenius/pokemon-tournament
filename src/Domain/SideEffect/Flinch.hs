@@ -1,9 +1,15 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Domain.SideEffect.Flinch where
+module Domain.SideEffect.Flinch (
+  FlinchCondition(),
+  mkFlinchEffect,
+  FlinchData(..),
+  mapFlinch
+                                ) where
 
 import Domain.Attribute.Ability
 import Domain.Attribute.Counterparty
+import Domain.Algebra.Effect
 import Data.Maybe
 import Control.Applicative
 
@@ -25,6 +31,12 @@ data FlinchData battle = FlinchData
     abilityOfPokemon :: Counterparty -> battle -> Ability
   }
 
+mkFlinchEffect :: FlinchData battle -> battle -> Effect (FlinchCondition ())
+mkFlinchEffect d = toEffect . parseFlinch d
+
+mapFlinch :: (a -> b) -> Effect (FlinchCondition a) -> Effect (FlinchCondition b)
+mapFlinch f = fmap (fmap f)
+
 parseFlinch :: FlinchData battle -> battle -> FlinchCondition ()
 parseFlinch FlinchData{..} battle =
   fromMaybe GeneralCondition $
@@ -32,6 +44,9 @@ parseFlinch FlinchData{..} battle =
   parseMoldBreaker abilityOfPokemon battle <|>
   parseInnerFocus abilityOfPokemon battle 
 
+toEffect :: FlinchCondition a -> Effect (FlinchCondition a)
+toEffect TargetHasInnerFocus = doNothing
+toEffect x = return x
 
 ------
 
