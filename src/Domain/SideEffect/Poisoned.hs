@@ -47,7 +47,7 @@ ailmentBlocking' ad@AilmentData{..} b =
 ailmentBlockingExtended ::
   AilmentData battle
   -> battle
-  -> Maybe (AilmentBlockingExtended IsImmunity IsPoisonType)
+  -> Maybe PoisonBlocked
 ailmentBlockingExtended ad@AilmentData{..} b =
   (BlockingByType <$> isPoisonType (pokemonHasType counterParty b)) <|>
   (BlockingByAbility <$> ailmentBlocking' ad b)
