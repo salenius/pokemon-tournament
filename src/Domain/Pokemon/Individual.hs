@@ -2,7 +2,6 @@
 
 module Domain.Pokemon.Individual (
   Pokemon(..),
-  Quadruple(..),
   pokemonSpecies,
   pokemonHeldItem,
   pokemonMoves,
@@ -18,6 +17,7 @@ import Domain.Attribute.Statistic
 import Domain.Attribute.HeldItem
 import Domain.Attribute.Nature
 import Domain.Attribute.PokemonFactors
+import Domain.Attribute.Quadruple
 import Data.Bifunctor
 import Control.Lens
 
@@ -29,18 +29,6 @@ data Pokemon pkmn mv = Pokemon
   , _pokemonFactors :: Factors 
   }
 
-data Quadruple m =
-  Monoruple m
-  | Duoruple m m
-  | Triruple m m m
-  | Quadruple m m m m
-  deriving (Eq,Read)
-
-instance Show m => Show (Quadruple m) where
-  show (Monoruple a) = show [a]
-  show (Duoruple a b) = show [a,b]
-  show (Triruple a b c) = show [a,b,c]
-  show (Quadruple a b c d) = show [a,b,c,d]
 
 data Factors = Factors
   {
@@ -51,7 +39,6 @@ data Factors = Factors
   }
 
 makeLenses ''Pokemon
-makePrisms ''Quadruple
 makeLenses ''Factors
 
 instance Bifunctor Pokemon where
@@ -59,12 +46,6 @@ instance Bifunctor Pokemon where
 
 instance AsPokemonSpecies pkmn => AsPokemonSpecies (Pokemon pkmn mv) where
   asSpecies pkmn = asSpecies $ view pokemonSpecies pkmn
-
-instance Functor Quadruple where
-  fmap f (Monoruple a) = Monoruple $ f a
-  fmap f (Duoruple a b) = Duoruple (f a) $ f b
-  fmap f (Triruple a b c) = Triruple (f a) (f b) $ f c
-  fmap f (Quadruple a b c d) = Quadruple (f a) (f b) (f c) $ f d
 
 pokemonStatistic :: AsPokemonSpecies pkmn => BaseStat -> Pokemon pkmn mv -> Int
 pokemonStatistic stat pkmn = statistic stat (asStatFactor pkmn)
