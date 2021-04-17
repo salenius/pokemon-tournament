@@ -27,12 +27,7 @@ import Domain.Attribute.Ability
 import Domain.Attribute.Gender
 import Data.List.NonEmpty as N
 import Control.Lens
-
-newtype TypeOfPokemon =
-  TypeOfPokemon [TypeOf] deriving (Eq,Show)
-
-getTypeOfPokemon :: TypeOfPokemon -> [TypeOf]
-getTypeOfPokemon (TypeOfPokemon t) = t
+import Domain.Pokemon.TypeOf
 
 data PokemonSpecies = PokemonSpecies
   {
