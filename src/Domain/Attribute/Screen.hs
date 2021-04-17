@@ -22,3 +22,13 @@ instance Semigroup Reflect where
   a <> NoReflect = a
   Reflect a <> Reflect b = Reflect $ a + b
 
+data Safeguard =
+  NoSafeguard
+  | Safeguard Int
+  deriving (Eq,Show,Ord)
+
+instance Semigroup Safeguard where
+  NoSafeguard <> NoSafeguard = NoSafeguard
+  NoSafeguard <> a = a
+  a <> NoSafeguard = a
+  Safeguard a <> Safeguard b = Safeguard $ a + b
