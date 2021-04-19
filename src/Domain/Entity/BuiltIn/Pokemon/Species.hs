@@ -14,6 +14,7 @@ import Domain.Entity.Stats.Pokemon
 import Domain.Attribute.Statistic
 import Domain.Attribute.Ability
 import Domain.Attribute.TypeOf
+import Domain.Attribute.Physiology
 import Domain.Attribute.Gender
 
 
@@ -131,6 +132,7 @@ data Milotic =
 
 data Sharpedo =
   Sharpedo (Species' Male1to1)
+  | MegaSharpedo (Species' Male1to1)
   deriving (Eq,Show,Read,Generic)
 
 data Walrein =
@@ -519,6 +521,13 @@ instance PokemonStat Sharpedo where
     BaseSAttack -> 95
     BaseSDefence -> 40
     BaseSpeed -> 95
+  baseStat s (MegaSharpedo _) = case s of
+    BaseHP -> 70
+    BaseAttack -> 140
+    BaseDefence -> 70
+    BaseSAttack -> 110
+    BaseSDefence -> 65
+    BaseSpeed -> 105
 
 instance PokemonStat Walrein where 
   baseStat s (Walrein _) = case s of
@@ -841,8 +850,10 @@ instance PokemonAttribute Milotic where
 
 instance PokemonAttribute Sharpedo where
   abilityIs (Sharpedo _) = RoughSkin
+  abilityIs (MegaSharpedo _) = StrongJaw
   typeIs _ = ListOf2 Water Dark
   genderIs (Sharpedo x) = getGender x
+  genderIs (MegaSharpedo x) = getGender x
 
 instance PokemonAttribute Walrein where
   abilityIs (Walrein x) = getAbility _Walrein'sAbility x
@@ -1313,6 +1324,200 @@ instance Monoid Chandelure where
   
 instance Monoid Braviary where
   mempty = Braviary mempty
+
+--
+
+instance PokemonPhysiology Pikachu where 
+  weight _ = Kilograms 6.0
+  height _ = Meters 0.4
+
+instance PokemonPhysiology Lapras where 
+  weight _ = Kilograms 220.0
+  height _ = Meters 2.5
+
+instance PokemonPhysiology Snorlax where 
+  weight _ = Kilograms 460.0
+  height _ = Meters 2.1
+
+instance PokemonPhysiology Venusaur where 
+  weight (Venusaur _) = Kilograms 100.0
+  weight (MegaVenusaur _) = Kilograms 155.5
+  height (Venusaur _) = Meters 2.0
+  height (MegaVenusaur _) = Meters 2.4
+
+instance PokemonPhysiology Charizard where 
+  weight (Charizard _) = Kilograms 90.5
+  weight (MegaCharizardX _) = Kilograms 110.5
+  weight (MegaCharizardY _) = Kilograms 100.5
+  height _ = Meters 1.7
+
+instance PokemonPhysiology Blastoise where 
+  weight (Blastoise _) = Kilograms 85.5
+  weight (MegaBlastoise _) = Kilograms 101.1
+  height _ = Meters 1.6
+
+instance PokemonPhysiology Aerodactyl where 
+  weight (Aerodactyl _) = Kilograms 59.0
+  weight (MegaAerodactyl _) = Kilograms 79.0
+  height (Aerodactyl _) = Meters 1.8
+  height (MegaAerodactyl _) = Meters 2.1
+
+instance PokemonPhysiology Machamp where 
+  weight _ = Kilograms 130.0
+  height _ = Meters 1.6
+
+instance PokemonPhysiology Alakazam where 
+  weight _ = Kilograms 48.0
+  height (Alakazam _) = Meters 1.5
+  height (MegaAlakazam _) = Meters 1.2
+
+instance PokemonPhysiology Exeggutor where 
+  weight (Exeggutor _) = Kilograms 120.0
+  weight (AlolanExeggutor _) = Kilograms 415.6
+  height (Exeggutor _) = Meters 2.0
+  height (AlolanExeggutor _) = Meters 10.9
+
+instance PokemonPhysiology Arcanine where 
+  weight _ = Kilograms 155.0
+  height _ = Meters 1.9
+
+instance PokemonPhysiology Gyarados where 
+  weight (Gyarados _) = Kilograms 235.0
+  weight (MegaGyarados _) = Kilograms 305.0
+  height (Gyarados _) = Meters 6.0
+  height (MegaGyarados _) = Meters 6.5
+
+instance PokemonPhysiology Dragonite where 
+  weight _ = Kilograms 210.0
+  height _ = Meters 2.2
+
+instance PokemonPhysiology Salamence where 
+  weight (Salamence _) = Kilograms 102.6
+  weight (MegaSalamence _) = Kilograms 112.6
+  height (Salamence _) = Meters 1.5
+  height (MegaSalamence _) = Meters 1.8
+
+instance PokemonPhysiology Kingdra where 
+  weight _ = Kilograms 152.0
+  height _ = Meters 1.8
+
+instance PokemonPhysiology Haxorus where 
+  weight _ = Kilograms 105.5
+  height _ = Meters 1.8
+
+instance PokemonPhysiology Hydreigon where 
+  weight _ = Kilograms 160.0
+  height _ = Meters 1.8
+
+instance PokemonPhysiology Flygon where 
+  weight _ = Kilograms 82.0
+  height _ = Meters 2.0
+
+instance PokemonPhysiology Metagross where 
+  weight (Metagross _) = Kilograms 550.0
+  weight (MegaMetagross _) = Kilograms 942.9
+  height (Metagross _) = Meters 1.6
+  height (MegaMetagross _) = Meters 2.5
+
+instance PokemonPhysiology Aggron where 
+  height (Aggron _) = Meters 2.1
+  height (MegaAggron _) = Meters 2.2
+  weight (Aggron _) = Kilograms 360.0
+  weight (MegaAggron _) = Kilograms 395.0
+
+instance PokemonPhysiology Excadrill where 
+  weight _ = Kilograms 40.4
+  height _ = Meters 0.7
+
+instance PokemonPhysiology Archeops where 
+  weight _ = Kilograms 32.0
+  height _ = Meters 1.4
+
+instance PokemonPhysiology Cradily where 
+  weight _ = Kilograms 60.4
+  height _ = Meters 1.5
+
+instance PokemonPhysiology Armaldo where 
+  weight _ = Kilograms 68.2
+  height _ = Meters 1.5
+
+instance PokemonPhysiology Milotic where 
+  weight _ = Kilograms 162.0
+  height _ = Meters 6.2
+
+instance PokemonPhysiology Sharpedo where 
+  weight (Sharpedo _) = Kilograms 88.8
+  weight (MegaSharpedo _) = Kilograms 130.3
+  height (Sharpedo _) = Meters 1.8
+  height (MegaSharpedo _) = Meters 2.5
+
+instance PokemonPhysiology Walrein where 
+  weight _ = Kilograms 150.6
+  height _ = Meters 1.4
+
+instance PokemonPhysiology Ludicolo where 
+  weight _ = Kilograms 55.0
+  height _ = Meters 1.5
+
+instance PokemonPhysiology Swampert where 
+  weight (Swampert _) = Kilograms 81.9
+  weight (MegaSwampert _) = Kilograms 102.0
+  height (Swampert _) = Meters 1.5
+  height (MegaSwampert _) = Meters 1.9
+
+instance PokemonPhysiology Starmie where 
+  weight _ = Kilograms 80.0
+  height _ = Meters 1.1
+
+instance PokemonPhysiology Garchomp where 
+  weight _ = Kilograms 95.0
+  height _ = Meters 1.9
+
+instance PokemonPhysiology Spiritomb where 
+  weight _ = Kilograms 108.0
+  height _ = Meters 1.0
+
+instance PokemonPhysiology Roserade where 
+  weight _ = Kilograms 14.5
+  height _ = Meters 0.9
+
+instance PokemonPhysiology Togekiss where 
+  weight _ = Kilograms 38.0
+  height _ = Meters 1.5
+
+instance PokemonPhysiology Lucario where 
+  weight (Lucario _) = Kilograms 54.0
+  weight (MegaLucario _) = Kilograms 57.5
+  height (Lucario _) = Meters 1.2
+  height (MegaLucario _) = Meters 1.3
+
+instance PokemonPhysiology Glaceon where 
+  weight _ = Kilograms 25.9
+  height _ = Meters 0.8
+
+instance PokemonPhysiology Volcarona where 
+  weight _ = Kilograms 46.0
+  height _ = Meters 1.6
+
+instance PokemonPhysiology Conkeldurr where 
+  weight _ = Kilograms 87.0
+  height _ = Meters 1.4
+
+instance PokemonPhysiology Reuniclus where 
+  weight _ = Kilograms 20.1
+  height _ = Meters 1.0
+
+instance PokemonPhysiology Krookodile where 
+  weight _ = Kilograms 96.3
+  height _ = Meters 1.5
+
+instance PokemonPhysiology Chandelure where 
+  weight _ = Kilograms 34.3
+  height _ = Meters 1.0
+
+instance PokemonPhysiology Braviary where 
+  weight _ = Kilograms 41.0
+  height _ = Meters 1.5
 
   
 ---

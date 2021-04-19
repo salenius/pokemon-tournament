@@ -4,6 +4,7 @@ module Domain.Attribute.Ability where
 
 data Ability =
   NoAbility
+  | Adaptability
   | Aerilate
   | BattleArmor
   | BigPecks
@@ -14,10 +15,12 @@ data Ability =
   | CloudNine
   | Comatose
   | Defeatist
+  | Drought
   | Filter
   | FlameBody
   | FlashFire
   | FlowerVeil
+  | Frisk
   | FullMetalBody
   | Guts
   | Hustle
@@ -37,6 +40,7 @@ data Ability =
   | MagicGuard
   | MagmaArmor
   | MarvelScale
+  | MegaLauncher
   | Merciless
   | MoldBreaker
   | Moxie
@@ -69,13 +73,16 @@ data Ability =
   | Static
   | Steadfast
   | StormDrain
+  | StrongJaw
   | Sturdy
   | SuctionCups
   | SwiftSwim
   | Synchronize
   | Teravolt
   | ThickFat
+  | ToughClaws
   | Torrent
+  | Trace
   | Turboblaze
   | VitalSpirit
   | VoltAbsorb
