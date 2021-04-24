@@ -9,7 +9,7 @@ data BaseStat =
   | BaseSAttack
   | BaseSDefence
   | BaseSpeed
-  deriving (Eq,Show,Ord)
+  deriving (Eq,Show,Ord,Enum)
 
 type Statistic = Int
 type Level = Int
