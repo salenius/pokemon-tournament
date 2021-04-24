@@ -180,33 +180,33 @@ instance PokemonIndividual Alder'sPokemon where
 
 instance PokemonStat Red'sPokemon where
   baseStat s pkmn = case pkmn of
-    Red'sPikachu p -> baseStat s p
-    Red'sLapras p -> baseStat s p
-    Red'sSnorlax p -> baseStat s p
-    Red'sVenusaur p -> baseStat s p
+    Red'sPikachu p   -> baseStat s p
+    Red'sLapras p    -> baseStat s p
+    Red'sSnorlax p   -> baseStat s p
+    Red'sVenusaur p  -> baseStat s p
     Red'sCharizard p -> baseStat s p
     Red'sBlastoise p -> baseStat s p
 
 instance PokemonAttribute Red'sPokemon where
   abilityIs pkmn = case pkmn of
-    Red'sPikachu p -> abilityIs p
-    Red'sLapras p -> abilityIs p
-    Red'sSnorlax p -> abilityIs p
-    Red'sVenusaur p -> abilityIs p
+    Red'sPikachu p   -> abilityIs p
+    Red'sLapras p    -> abilityIs p
+    Red'sSnorlax p   -> abilityIs p
+    Red'sVenusaur p  -> abilityIs p
     Red'sCharizard p -> abilityIs p
     Red'sBlastoise p -> abilityIs p
   typeIs pkmn = case pkmn of
-    Red'sPikachu p -> typeIs p
-    Red'sLapras p -> typeIs p
-    Red'sSnorlax p -> typeIs p
-    Red'sVenusaur p -> typeIs p
+    Red'sPikachu p   -> typeIs p
+    Red'sLapras p    -> typeIs p
+    Red'sSnorlax p   -> typeIs p
+    Red'sVenusaur p  -> typeIs p
     Red'sCharizard p -> typeIs p
     Red'sBlastoise p -> typeIs p
   genderIs pkmn = case pkmn of
-    Red'sPikachu p -> genderIs p
-    Red'sLapras p -> genderIs p
-    Red'sSnorlax p -> genderIs p
-    Red'sVenusaur p -> genderIs p
+    Red'sPikachu p   -> genderIs p
+    Red'sLapras p    -> genderIs p
+    Red'sSnorlax p   -> genderIs p
+    Red'sVenusaur p  -> genderIs p
     Red'sCharizard p -> genderIs p
     Red'sBlastoise p -> genderIs p
 
@@ -214,34 +214,34 @@ instance PokemonAttribute Red'sPokemon where
 instance PokemonStat Blue'sPokemon where
   baseStat s pkmn = case pkmn of
     Blue'sAerodactyl p -> baseStat s p
-    Blue'sMachamp p -> baseStat s p
-    Blue'sAlakazam p -> baseStat s p
-    Blue'sExeggutor p -> baseStat s p
-    Blue'sArcanine p -> baseStat s p
-    Blue'sGyarados p -> baseStat s p
+    Blue'sMachamp p    -> baseStat s p
+    Blue'sAlakazam p   -> baseStat s p
+    Blue'sExeggutor p  -> baseStat s p
+    Blue'sArcanine p   -> baseStat s p
+    Blue'sGyarados p   -> baseStat s p
 
 instance PokemonAttribute Blue'sPokemon where
   abilityIs pkmn = case pkmn of
     Blue'sAerodactyl p -> abilityIs p
-    Blue'sMachamp p -> abilityIs p
-    Blue'sAlakazam p -> abilityIs p
-    Blue'sExeggutor p -> abilityIs p
-    Blue'sArcanine p -> abilityIs p
-    Blue'sGyarados p -> abilityIs p
+    Blue'sMachamp p    -> abilityIs p
+    Blue'sAlakazam p   -> abilityIs p
+    Blue'sExeggutor p  -> abilityIs p
+    Blue'sArcanine p   -> abilityIs p
+    Blue'sGyarados p   -> abilityIs p
   typeIs pkmn = case pkmn of
     Blue'sAerodactyl p -> typeIs p
-    Blue'sMachamp p -> typeIs p
-    Blue'sAlakazam p -> typeIs p
-    Blue'sExeggutor p -> typeIs p
-    Blue'sArcanine p -> typeIs p
-    Blue'sGyarados p -> typeIs p
+    Blue'sMachamp p    -> typeIs p
+    Blue'sAlakazam p   -> typeIs p
+    Blue'sExeggutor p  -> typeIs p
+    Blue'sArcanine p   -> typeIs p
+    Blue'sGyarados p   -> typeIs p
   genderIs pkmn = case pkmn of
     Blue'sAerodactyl p -> genderIs p
-    Blue'sMachamp p -> genderIs p
-    Blue'sAlakazam p -> genderIs p
-    Blue'sExeggutor p -> genderIs p
-    Blue'sArcanine p -> genderIs p
-    Blue'sGyarados p -> genderIs p
+    Blue'sMachamp p    -> genderIs p
+    Blue'sAlakazam p   -> genderIs p
+    Blue'sExeggutor p  -> genderIs p
+    Blue'sArcanine p   -> genderIs p
+    Blue'sGyarados p   -> genderIs p
 
   
 
