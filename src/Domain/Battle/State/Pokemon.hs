@@ -1,7 +1,17 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 
-module Domain.Battle.State.Pokemon where
+module Domain.Battle.State.Pokemon (
+  PokemonSpecies(),
+  pokemonStats,
+  pokemonLevelOf,
+  pokemonActualAbility,
+  pokemonActualHeldItem,
+  pokemonActualTypeOf,
+  pokemonGender,
+  pokemonWeight,
+  mkPokemonSpecies
+                                   ) where
 
 import Domain.Entity.Pokemon.Statistic
 import Domain.Attribute.Statistic
