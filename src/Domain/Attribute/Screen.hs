@@ -11,6 +11,9 @@ instance Semigroup LightScreen where
   a <> NoLightScreen = a
   LightScreen a <> LightScreen b = LightScreen $ a + b
 
+instance Monoid LightScreen where
+  mempty = NoLightScreen
+
 data Reflect =
   NoReflect
   | Reflect Int
@@ -22,6 +25,9 @@ instance Semigroup Reflect where
   a <> NoReflect = a
   Reflect a <> Reflect b = Reflect $ a + b
 
+instance Monoid Reflect where
+  mempty = NoReflect
+
 data Safeguard =
   NoSafeguard
   | Safeguard Int
@@ -32,3 +38,6 @@ instance Semigroup Safeguard where
   NoSafeguard <> a = a
   a <> NoSafeguard = a
   Safeguard a <> Safeguard b = Safeguard $ a + b
+
+instance Monoid Safeguard where
+  mempty = NoSafeguard
