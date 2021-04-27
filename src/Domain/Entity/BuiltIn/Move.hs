@@ -4,7 +4,11 @@ module Domain.Entity.BuiltIn.Move (
   module Constr,
   mkMove,
   Move(),
-  MakeMove
+  MakeMove,
+  _StatusMove,
+  _DamagingMove,
+  _PhysicalMove,
+  _SpecialMove
                                   ) where
 
 import qualified Domain.Entity.BuiltIn.Move.Attacking as Att
