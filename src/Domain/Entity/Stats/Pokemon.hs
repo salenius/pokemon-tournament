@@ -61,3 +61,7 @@ instance Show a => Show (ListOf2 a) where
   show (ListOf2 x y) = show $ [x,y]
 
 type TypeOfPokemon = ListOf2 TypeOf
+
+typeOfToList :: TypeOfPokemon -> [TypeOf]
+typeOfToList (ListOf1 x) = [x]
+typeOfToList (ListOf2 x y) = [x,y]
