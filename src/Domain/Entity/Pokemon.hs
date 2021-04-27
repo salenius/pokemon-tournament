@@ -2,10 +2,13 @@
 
 module Domain.Entity.Pokemon (
   Pokemon(..),
+  PokemonFactors(..),
+  StatValues(..),
   pokemonSpecies,
   pokemonFactors,
   pokemonLevel,
-  pokemonStatistic
+  pokemonStatistic,
+  dfltPokemonFactors
                              ) where
 
 import Domain.Attribute.Ability
@@ -25,8 +28,6 @@ data Pokemon pkmn = Pokemon
     _pokemonSpecies :: pkmn
   , _pokemonFactors :: PokemonFactors
   }
-
-
 
 data PokemonFactors = PokemonFactors
   {
@@ -78,3 +79,9 @@ statValuesToFunction stats bs = case bs of
 
 instance PokemonStat pkmn => PokemonStat (Pokemon pkmn) where
   baseStat bs p = baseStat bs $ view pokemonSpecies p
+
+mkStatValues :: Int -> StatValues
+mkStatValues v = StatValues v v v v v v
+
+dfltPokemonFactors :: PokemonFactors
+dfltPokemonFactors = PokemonFactors 50 (mkStatValues 31) (mkStatValues 85) Timid
