@@ -210,6 +210,23 @@ instance PokemonAttribute Red'sPokemon where
     Red'sCharizard p -> genderIs p
     Red'sBlastoise p -> genderIs p
 
+instance PokemonPhysiology Red'sPokemon where
+  weight pkmn = case pkmn of
+    Red'sPikachu p   -> weight p
+    Red'sLapras p    -> weight p
+    Red'sSnorlax p   -> weight p
+    Red'sVenusaur p  -> weight p
+    Red'sCharizard p -> weight p
+    Red'sBlastoise p -> weight p
+  height pkmn = case pkmn of
+    Red'sPikachu p   -> height p
+    Red'sLapras p    -> height p
+    Red'sSnorlax p   -> height p
+    Red'sVenusaur p  -> height p
+    Red'sCharizard p -> height p
+    Red'sBlastoise p -> height p
+
+
 
 instance PokemonStat Blue'sPokemon where
   baseStat s pkmn = case pkmn of
@@ -242,6 +259,23 @@ instance PokemonAttribute Blue'sPokemon where
     Blue'sExeggutor p  -> genderIs p
     Blue'sArcanine p   -> genderIs p
     Blue'sGyarados p   -> genderIs p
+
+instance PokemonPhysiology Blue'sPokemon where
+  weight pkmn = case pkmn of
+    Blue'sAerodactyl p -> weight p
+    Blue'sMachamp p    -> weight p
+    Blue'sAlakazam p   -> weight p
+    Blue'sExeggutor p  -> weight p
+    Blue'sArcanine p   -> weight p
+    Blue'sGyarados p   -> weight p
+  height pkmn = case pkmn of
+    Blue'sAerodactyl p -> height p
+    Blue'sMachamp p    -> height p
+    Blue'sAlakazam p   -> height p
+    Blue'sExeggutor p  -> height p
+    Blue'sArcanine p   -> height p
+    Blue'sGyarados p   -> height p
+
 
   
 
@@ -277,6 +311,23 @@ instance PokemonAttribute Lance'sPokemon where
     Lance'sHydreigon p -> genderIs p
     Lance'sFlygon p -> genderIs p
 
+instance PokemonPhysiology Lance'sPokemon where
+  weight pkmn = case pkmn of
+    Lance'sDragonite p -> weight p
+    Lance'sSalamence p -> weight p
+    Lance'sKingdra p -> weight p
+    Lance'sHaxorus p -> weight p
+    Lance'sHydreigon p -> weight p
+    Lance'sFlygon p -> weight p
+  height pkmn = case pkmn of
+    Lance'sDragonite p -> height p
+    Lance'sSalamence p -> height p
+    Lance'sKingdra p -> height p
+    Lance'sHaxorus p -> height p
+    Lance'sHydreigon p -> height p
+    Lance'sFlygon p -> height p
+
+
 
 instance PokemonStat Steven'sPokemon where
   baseStat s pkmn = case pkmn of
@@ -309,6 +360,23 @@ instance PokemonAttribute Steven'sPokemon where
     Steven'sArcheops p -> genderIs p
     Steven'sCradily p -> genderIs p
     Steven'sArmaldo p -> genderIs p
+
+instance PokemonPhysiology Steven'sPokemon where
+  weight pkmn = case pkmn of
+    Steven'sMetagross p -> weight p
+    Steven'sAggron p -> weight p
+    Steven'sExcadrill p -> weight p
+    Steven'sArcheops p -> weight p
+    Steven'sCradily p -> weight p
+    Steven'sArmaldo p -> weight p
+  height pkmn = case pkmn of
+    Steven'sMetagross p -> height p
+    Steven'sAggron p -> height p
+    Steven'sExcadrill p -> height p
+    Steven'sArcheops p -> height p
+    Steven'sCradily p -> height p
+    Steven'sArmaldo p -> height p
+
 
 
 instance PokemonStat Wallace'sPokemon where
@@ -343,6 +411,23 @@ instance PokemonAttribute Wallace'sPokemon where
     Wallace'sSwampert p -> genderIs p
     Wallace'sStarmie p -> genderIs p
 
+instance PokemonPhysiology Wallace'sPokemon where
+  weight pkmn = case pkmn of
+    Wallace'sMilotic p -> weight p
+    Wallace'sSharpedo p -> weight p
+    Wallace'sWalrein p -> weight p
+    Wallace'sLudicolo p -> weight p
+    Wallace'sSwampert p -> weight p
+    Wallace'sStarmie p -> weight p
+  height pkmn = case pkmn of
+    Wallace'sMilotic p -> height p
+    Wallace'sSharpedo p -> height p
+    Wallace'sWalrein p -> height p
+    Wallace'sLudicolo p -> height p
+    Wallace'sSwampert p -> height p
+    Wallace'sStarmie p -> height p
+
+
 
 instance PokemonStat Cynthia'sPokemon where
   baseStat s pkmn = case pkmn of
@@ -376,6 +461,23 @@ instance PokemonAttribute Cynthia'sPokemon where
     Cynthia'sLucario p -> genderIs p
     Cynthia'sGlaceon p -> genderIs p
 
+instance PokemonPhysiology Cynthia'sPokemon where
+  weight pkmn = case pkmn of
+    Cynthia'sGarchomp p -> weight p
+    Cynthia'sSpiritomb p -> weight p
+    Cynthia'sRoserade p -> weight p
+    Cynthia'sTogekiss p -> weight p
+    Cynthia'sLucario p -> weight p
+    Cynthia'sGlaceon p -> weight p
+  height pkmn = case pkmn of
+    Cynthia'sGarchomp p -> height p
+    Cynthia'sSpiritomb p -> height p
+    Cynthia'sRoserade p -> height p
+    Cynthia'sTogekiss p -> height p
+    Cynthia'sLucario p -> height p
+    Cynthia'sGlaceon p -> height p
+
+
 
 instance PokemonStat Alder'sPokemon where
   baseStat s pkmn = case pkmn of
@@ -408,6 +510,23 @@ instance PokemonAttribute Alder'sPokemon where
     Alder'sKrookodile p -> genderIs p
     Alder'sChandelure p -> genderIs p
     Alder'sBraviary p -> genderIs p
+
+instance PokemonPhysiology Alder'sPokemon where
+  weight pkmn = case pkmn of
+    Alder'sVolcarona p -> weight p
+    Alder'sConkeldurr p -> weight p
+    Alder'sReuniclus p -> weight p
+    Alder'sKrookodile p -> weight p
+    Alder'sChandelure p -> weight p
+    Alder'sBraviary p -> weight p
+  height pkmn = case pkmn of
+    Alder'sVolcarona p -> height p
+    Alder'sConkeldurr p -> height p
+    Alder'sReuniclus p -> height p
+    Alder'sKrookodile p -> height p
+    Alder'sChandelure p -> height p
+    Alder'sBraviary p -> height p
+
 
 
 
