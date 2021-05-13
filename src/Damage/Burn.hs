@@ -23,6 +23,7 @@ import Attribute.Ability
 import Attribute.Category
 import Data.Maybe
 import Damage.Interpreter
+import Helper.Parse
 
 data BurnData d a (m :: * -> *) = BurnData
   {
@@ -55,52 +56,46 @@ mkBurnData ail ab cat nxt dta = BurnData ail ab cat f nxt
   where
     g User (BadAilment (Burned _)) = 0.5
     g _ _ = 1.0
-    h = preview _PhysicalMove . cat
     f =
-      guts ab h dta $
-      marvelScale ab h dta $
+      guts ab cat dta $
+      marvelScale ab cat dta $
       g
 
 
-guts ::
-  (a -> Counterparty -> PokemonAbility)
-  -> (a -> Maybe Physical)
+data GutsData = GutsData Guts Physical 
+
+data MarvelScaleData = MarvelScaleData MarvelScale Physical
+
+type PhysicalMoveCase a =
+ (a -> Counterparty -> PokemonAbility)
+  -> (a -> DamagingCategory')
   -> a
   -> (Counterparty -> Ailment -> Double)
   -> (Counterparty -> Ailment -> Double)
-guts getAbility getPhysical dta fn = \cp ai' ->
-  let
-    ab   = getAbility dta User
-    dflt = fn cp ai' 
-    res  = do
-      gt <- preview _Guts ab
-      ph <- getPhysical dta
-      ai <- preview _BadAilment ai'
-      usr <- isUser cp
-      let bse = BurnCase gt () ai ph usr
-      return $ (const 1.5) bse
-  in fromMaybe dflt res
-
-marvelScale ::
-  (a -> Counterparty -> PokemonAbility)
-  -> (a -> Maybe Physical)
-  -> a
-  -> (Counterparty -> Ailment -> Double)
-  -> (Counterparty -> Ailment -> Double)
-marvelScale getAbility getPhysical dta fn = \cp ai ->
-  let
-    ab   = getAbility dta User
-    ab'  = getAbility dta Target
-    dflt = fn cp ai
-    res  = do
-      ph <- getPhysical dta
-      ms <- preview _MarvelScale ab
-      mb <- notMoldBreaker ab'
-      ai' <- preview _BadAilment ai
-      trg <- isTarget cp
-      let bse = BurnCase ms mb ai' ph trg
-      return $ (const 1.5) bse
-    in fromMaybe dflt res
 
 
-data BurnCase ab  = BurnCase ab () BadAilment' Physical Counterparty
+guts :: PhysicalMoveCase a
+guts getAbility getCategory dta fn =
+  parseAndAct' m h dta fn
+  where
+    m dta = do
+      gts <- getAbility dta User & preview _Guts
+      phs <- dta & getCategory & preview _PhysicalMove
+      return $ GutsData gts phs
+    h _ f = \cp ai -> case (cp, preview _BadAilment ai) of
+      (User, Just _) -> 1.5
+      _              -> f cp ai
+      
+
+marvelScale :: PhysicalMoveCase a
+marvelScale getAbility getCategory dta fn =
+  parseAndAct' m h dta fn
+  where
+    m dta = do
+      msc <- getAbility dta Target & preview _MarvelScale
+      phs <- dta & getCategory & preview _PhysicalMove
+      return $ MarvelScaleData msc phs
+    h _ f = \cp ai -> case (cp, preview _BadAilment ai) of
+      (Target, Just _) -> 0.5
+      _                -> f cp ai
+
