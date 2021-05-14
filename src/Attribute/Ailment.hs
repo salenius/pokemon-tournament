@@ -34,6 +34,9 @@ data StatusAilment =
   | BadStatusAilment (BadAilment', Int)
   deriving (Eq,Show,Ord)
 
-makePrisms ''BadAilment'
+makeClassyPrisms ''BadAilment'
 makePrisms ''Ailment
 makePrisms ''StatusAilment
+
+instance AsBadAilment' Ailment where
+  _BadAilment' = _BadAilment
