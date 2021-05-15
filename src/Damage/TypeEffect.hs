@@ -2,19 +2,22 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE RankNTypes #-}
+
 
 module Damage.TypeEffect (
   expertBelt
   ,solidRock
   ,neuroforce
   ,filter
-  ,allBerries
   ,mkTypeEffect
+  ,compoundBerries
   ,TypeEffect()
-  ,BerryData(..)
   ,calcTypeAdvantage
   ,doubleToAdvantage
   ,pokemonType
+  ,pokemonAbility
+  ,pokemonHeldItem
   ,moveType
   ,supereffectiveCase
   ,nextCriterion
@@ -25,208 +28,194 @@ import Types.Pokemon
 import Attribute.Counterparty
 import Attribute.Item
 import Attribute.Ability
+import Attribute.TypeOf
+import Control.Monad.Reader
 import Damage.Interpreter
 import Data.Maybe
 import Prelude hiding (filter)
 
-type DamageEffect a m = a -> Eff.TypeEffect -> m Double
+type DamageEffect = Eff.TypeEffect -> Double -> Double
 
 
-data TypeEffect d a m = TypeEffect
+data TypeEffect d m = TypeEffect
   {
     _calcTypeAdvantage :: Eff.TypeOf -> Eff.TypeOf -> Eff.TypeEffect
   , _doubleToAdvantage :: Double -> Eff.TypeEffect
-  , _pokemonType :: a -> Counterparty -> PokemonType
-  , _moveType :: a -> Eff.TypeOf
-  , _supereffectiveCase :: DamageEffect a m
-  , _nextCriterion :: d a m
+  , _pokemonType ::  Counterparty -> PokemonType
+  , _pokemonHeldItem :: Counterparty -> Maybe HeldItem
+  , _pokemonAbility :: Counterparty -> PokemonAbility
+  , _moveType :: Eff.TypeOf
+  , _supereffectiveCase :: Eff.TypeEffect -> Double -> m Double
+  , _nextCriterion :: d m
   }
 
 makeLenses ''TypeEffect
 
+
 mkTypeEffect ::
-  (a -> Counterparty -> PokemonType)
-  -> (a -> Eff.TypeOf)
-  -> DamageEffect a m
-  -> d a m
-  -> TypeEffect d a m
-mkTypeEffect = TypeEffect Eff.advantage f
+  (DamageOps m)
+  => (Counterparty -> PokemonType)
+  -> (Counterparty -> Maybe HeldItem)
+  -> (Counterparty -> PokemonAbility)
+  -> Eff.TypeOf
+  -> d m
+  -> TypeEffect d m
+mkTypeEffect pkType pkItem pkAbil mvType nxt =
+  TypeEffect Eff.advantage f pkType pkItem pkAbil mvType g nxt
   where
-    f 1.0 = Eff.NormalEffect
-    f 0.0 = Eff.NoEffect
+    f 1 = Eff.NormalEffect
+    f 0 = Eff.NoEffect
     f x
-      | x < 1.0 = Eff.NotVeryEffective
+      | x < 1 = Eff.NotVeryEffective
       | otherwise = Eff.SuperEffective
+    g eff amt = do
+      brs <- compoundBerries (\cp -> (mvType, pkItem cp)) eff amt
+      return $
+        expertBelt pkItem eff $
+        solidRock pkAbil eff $
+        filter pkAbil eff $
+        neuroforce pkAbil eff $
+        brs
 
-type SingleAttributeEff ab a m =
-  (a -> Counterparty -> Maybe ab)
-  -> DamageEffect a m
-  -> DamageEffect a m
-
-type Berry' a m =
-  (a -> BerryData)
-  -> DamageEffect a m
-  -> DamageEffect a m
-
-
-expertBelt :: DamageOps m => SingleAttributeEff ExpertBelt a m
-expertBelt = superEffectiveCase ((*) 1.3) User
-
-solidRock :: DamageOps m => SingleAttributeEff SolidRock a m
-solidRock = superEffectiveCase ((*) 0.75) Target
-
-filter :: DamageOps m => SingleAttributeEff Filter a m
-filter = superEffectiveCase ((*) 0.75) Target
+-----
 
 
-neuroforce :: DamageOps m => SingleAttributeEff Neuroforce a m
-neuroforce = superEffectiveCase ((*) 1.25) User
+type EffectParse b = Maybe b -> (Double -> Double) -> DamageEffect
 
-allBerries :: DamageOps m => Berry' a m
+expertBelt ab = supereffectiveBoost (preview _ExpertBelt <$> ab User) ((*) 1.1)
+
+solidRock ab = supereffectiveBoost (preview _SolidRock $ ab Target) ((*) 0.75)
+
+filter ab = supereffectiveBoost (preview _Filter $ ab Target) ((*) 0.75)
+
+neuroforce ab = supereffectiveBoost (preview _Neuroforce $ ab User) ((*) 0.75) 
+
+effectiveBoost :: (Eff.TypeEffect -> Bool) -> EffectParse b 
+effectiveBoost tpeff pr nval = \eff amt ->
+  let x = pr
+  in case (x, tpeff eff) of
+       (Just _, True) -> nval amt * amt
+       _              -> amt
+
+-- supereffectiveBoost :: DamageOps m => EffectParse a b m
+supereffectiveBoost = effectiveBoost ((==) Eff.SuperEffective)
+
+-----
+
+
+chilanBerry = berry (effectiveBoost (const True)) _NormalType _ChilanBerry 
+
+babiriBerry = superBerry _SteelType _BabiriBerry
+    
+occaBerry = superBerry _FireType _OccaBerry
+
+chartiBerry = superBerry _RockType _ChartiBerry
+
+chopleBerry = superBerry _FightingType _ChopleBerry
+
+cobaBerry = superBerry _FlyingType _CobaBerry
+
+colburBerry = superBerry _DarkType _ColburBerry
+
+habanBerry = superBerry _DragonType _HabanBerry
+
+kasibBerry = superBerry _GhostType _KasibBerry
+
+kebiaBerry = superBerry _PoisonType _KebiaBerry
+
+passhoBerry = superBerry _WaterType _PasshoBerry
+
+payapaBerry = superBerry _PsychicType _PayapaBerry
+
+roseliBerry = superBerry _FairyType _RoseliBerry
+
+rindoBerry = superBerry _GrassType _RindoBerry
+
+shucaBerry = superBerry _GroundType _ShucaBerry
+
+tangaBerry = superBerry _BugType _TangaBerry
+
+wacanBerry = superBerry _ElectricType _WacanBerry
+
+yacheBerry = superBerry _IceType _YacheBerry
+
+
+berry ::
+  (Maybe (a,b) -> (Double -> Double) -> DamageEffect)
+  -> Prism' Eff.TypeOf a
+  -> Prism' HeldItem b
+  -> (Counterparty -> (Eff.TypeOf, Maybe HeldItem))
+  -> DamageEffect
+berry f typePrism berryPrism getter = f (g . getter $ Target) ((*) 0.5) 
+  where
+    g = \(x,x') -> do
+      y <- preview typePrism x
+      z <- x' >>= preview berryPrism
+      return $ (y,z)
+
+superBerry = berry supereffectiveBoost
+
+type BerryTf = (Counterparty -> (Eff.TypeOf, Maybe HeldItem)) -> DamageEffect
+
+type BerryEnv = forall m. (DamageOps m) => ReaderT (Counterparty -> (Eff.TypeOf, Maybe HeldItem), Eff.TypeEffect) m Double
+
+asBerryEnv :: BerryTf -> Double -> BerryEnv
+asBerryEnv btf = btf & uncurry & reader & (??)
+
+dropItemIf :: BerryTf -> Double -> BerryEnv
+dropItemIf orig = \d -> do
+  x <- asBerryEnv orig d
+  let lessthan = x < d
+  case lessthan of
+    True -> lift $ dropItem Target
+    False -> return ()
+  return x
+
+(€) :: (Double -> BerryEnv) -> BerryTf -> Double -> BerryEnv
+a € b = \d -> a d >>= dropItemIf b
+
+allBerries :: Double -> BerryEnv
 allBerries =
-  babiriBerry €
-  chilanBerry €
-  occaBerry €
-  chartiBerry €
-  chopleBerry €
-  colburBerry €
-  cobaBerry €
-  habanBerry €
-  kasibBerry €
-  kebiaBerry €
-  passhoBerry €
-  payapaBerry €
-  roseliBerry €
-  rindoBerry €
-  shucaBerry €
-  tangaBerry €
-  wacanBerry €
-  yacheBerry
+  dropItemIf babiriBerry € 
+  chilanBerry € 
+  occaBerry € 
+  chartiBerry € 
+  chopleBerry € 
+  colburBerry € 
+  cobaBerry €   
+  habanBerry €  
+  kasibBerry €  
+  kebiaBerry €  
+  passhoBerry € 
+  payapaBerry € 
+  roseliBerry € 
+  rindoBerry €  
+  shucaBerry €  
+  tangaBerry €  
+  wacanBerry €  
+  yacheBerry    
+
+compoundBerries :: (DamageOps m) => (Counterparty -> (Eff.TypeOf, Maybe HeldItem)) -> Eff.TypeEffect -> Double -> m Double
+compoundBerries cpf tpeff amt = runReaderT (allBerries amt) (cpf, tpeff)
+
+-----
+
+{--
 
 instance InterpretDamage d => InterpretDamage (TypeEffect d) where
-  interp teff dta = do
-    othr           <- flip interp dta $ view nextCriterion teff
-    let mtype      = view moveType teff dta
-    let targetType = view pokemonType teff dta User
-    let advtgeCalc = view calcTypeAdvantage teff mtype
+  interp teff = do
+    othr           <- interp $ view nextCriterion teff
+    let mtype      = view moveType teff 
+    let targetType = view pokemonType teff User
+    let advtgeCalc = view calcTypeAdvantage mtype
     let advNumber  = foldr (*) 1 .
           fmap Eff.effectAsDouble .
           fmap advtgeCalc $
           targetType
     let advtge     = view doubleToAdvantage teff advNumber
-    extraEff       <- view supereffectiveCase teff dta advtge
+    extraEff       <- view supereffectiveCase teff advtge
     return $ othr <> Damage advNumber <> Damage extraEff
 
-
-superEffectiveCase :: DamageOps m =>
-  (Double -> Double) -> Counterparty -> SingleAttributeEff ab a m
-superEffectiveCase rule cp parser damEff dta eff = do
-  let abIt = parser dta cp
-  let efIs = case eff of
-               Eff.SuperEffective -> True
-               _                  -> False
-  amt     <- damEff dta eff
-  let mult = case (abIt, efIs) of
-               (Just _, True) -> rule amt
-               _              -> amt
-  return mult
-
-type Berry bry a m = (HeldItem -> Maybe bry) ->  Berry' a m
-
-
-data BerryData = BerryData
-  {
-    berryDataHeldItem :: Counterparty -> HeldItem
-  , berryDataMoveType :: Eff.TypeOf
-  }
-
-
-type BerryTypeAdvantage bry = bry -> Eff.TypeEffect -> Double
-type BerryMoveType bry = bry -> Eff.TypeOf -> Double
-
-berry :: DamageOps m => BerryTypeAdvantage bry -> BerryMoveType bry -> Berry bry a m
-berry advtg mtype berryParser getDta superadv dta' eff = do
-  let dta = getDta dta'
-  x <- superadv dta' eff
-  -- Hae käytössä oleva marja ja liikkeen tyyppi
-  let br = berryParser $ berryDataHeldItem dta Target
-  let mt = berryDataMoveType dta
-  -- Laske sen vaikutus pitääkö olla supertehokas
-  let effMult = fromMaybe 1.0 $ flip advtg eff <$> br
-  -- Laske vaikutus sille mitä tyyppiä iskun pitää olla
-  let mvTMult = fromMaybe 1.0 $ flip mtype mt <$> br
-  let total = max 0.5 (effMult * mvTMult)
-  case total of
-    0.5 -> dropItem Target
-    _   -> return ()
-  return $ x * total
- 
-
-halfIfSuperEffective :: BerryTypeAdvantage bry
-halfIfSuperEffective = \_ eff -> if eff == Eff.SuperEffective then 0.5 else 1.0
-
-halfIfTypeOf :: Eff.TypeOf -> BerryMoveType bry
-halfIfTypeOf t = \_ tp -> if tp == t then 0.5 else 1.0
-
-superBerry t = berry halfIfSuperEffective (halfIfTypeOf t)
-
-babiriBerry :: DamageOps m => Berry' a m
-babiriBerry = superBerry Eff.Steel (preview _BabiriBerry)
-
-chilanBerry :: DamageOps m => Berry' a m
-chilanBerry = berry (\_ _ -> 0.5) (halfIfTypeOf Eff.Normal) (preview _ChilanBerry)
-    
-occaBerry :: DamageOps m => Berry' a m
-occaBerry = superBerry Eff.Fire (preview _OccaBerry)
-
-chartiBerry :: DamageOps m => Berry' a m
-chartiBerry = superBerry Eff.Rock (preview _ChartiBerry)
-
-chopleBerry :: DamageOps m => Berry' a m
-chopleBerry = superBerry Eff.Fighting (preview _ChopleBerry)
-
-cobaBerry :: DamageOps m => Berry' a m
-cobaBerry = superBerry Eff.Flying (preview _CobaBerry)
-
-colburBerry :: DamageOps m => Berry' a m
-colburBerry = superBerry Eff.Dark (preview _ColburBerry)
-
-habanBerry :: DamageOps m => Berry' a m
-habanBerry = superBerry Eff.Dragon (preview _HabanBerry)
-
-kasibBerry :: DamageOps m => Berry' a m
-kasibBerry = superBerry Eff.Ghost (preview _KasibBerry)
-
-kebiaBerry :: DamageOps m => Berry' a m
-kebiaBerry = superBerry Eff.Poison (preview _KebiaBerry)
-
-passhoBerry :: DamageOps m => Berry' a m
-passhoBerry = superBerry Eff.Water (preview _PasshoBerry)
-
-payapaBerry :: DamageOps m => Berry' a m
-payapaBerry = superBerry Eff.Psychic (preview _PayapaBerry)
-
-roseliBerry :: DamageOps m => Berry' a m
-roseliBerry = superBerry Eff.Fairy (preview _RoseliBerry)
-
-rindoBerry :: DamageOps m => Berry' a m
-rindoBerry = superBerry Eff.Grass (preview _RindoBerry)
-
-shucaBerry :: DamageOps m => Berry' a m
-shucaBerry = superBerry Eff.Ground (preview _ShucaBerry)
-
-tangaBerry :: DamageOps m => Berry' a m
-tangaBerry = superBerry Eff.Bug (preview _TangaBerry)
-
-wacanBerry :: DamageOps m => Berry' a m
-wacanBerry = superBerry Eff.Electric (preview _WacanBerry)
-
-yacheBerry :: DamageOps m => Berry' a m
-yacheBerry = superBerry Eff.Ice (preview _YacheBerry)
-
-(€) :: DamageOps m => Berry' a m -> Berry' a m -> Berry' a m
-(€) berry1 berry2 getBerryData gen =
-  berry1 getBerryData gen `combineEffect` berry2 getBerryData gen
 
  
 combineEffect :: DamageOps m => DamageEffect a m -> DamageEffect a m -> DamageEffect a m
@@ -234,3 +223,4 @@ combineEffect gen1 gen2 dta tpeff = do
   a <- gen1 dta tpeff
   b <- gen2 dta tpeff
   return $ a * b
+--}

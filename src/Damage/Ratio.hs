@@ -15,28 +15,31 @@ import Damage.CriticalHit
 import Damage.Interpreter
 import Data.Maybe
 
-data Ratio a = Ratio
+data Ratio = Ratio
   {
-    _statModif :: a -> Counterparty -> ModifStat -> Int
-  , _statistic :: a -> Counterparty -> BaseStat -> Int
+    _statModif :: Counterparty -> ModifStat -> Int
+  , _statistic :: Counterparty -> BaseStat -> Int
   , _whichCounterparty :: UpOrDown -> Counterparty
   , _whichStat :: UpOrDown -> BaseStat
   , _criticalHitsImpact :: UpOrDown -> CriticalHit -> Int -> Int
   }
 
+class ToRatio a where
+  toRatio :: a -> Ratio
+
 data UpOrDown = Down | Up deriving (Eq,Show,Ord)
 
 makeLenses ''Ratio
 
-reduce :: Ratio a -> CriticalHit -> a -> Double
-reduce r cr d =
+reduce :: Ratio -> CriticalHit -> Double
+reduce r cr =
   let
-    upCase   = singleRatioCase Up cr r d
-    downCase = singleRatioCase Down cr r d
+    upCase   = singleRatioCase Up cr r
+    downCase = singleRatioCase Down cr r
   in upCase / downCase
 
-singleRatioCase :: UpOrDown -> CriticalHit -> Ratio a -> a -> Double
-singleRatioCase ud cr r d =
+singleRatioCase :: UpOrDown -> CriticalHit -> Ratio -> Double
+singleRatioCase ud cr r =
   let
     cp     = (r ^. whichCounterparty) ud
     stat   = (r ^. whichStat) ud
@@ -44,8 +47,8 @@ singleRatioCase ud cr r d =
                Up   -> Attack'
                Down -> Defence'
     s'     = fromMaybe dfltS' $ baseToModif stat
-    modifL = (r ^. statModif) d cp s'
-    statAm = (r ^. statistic) d cp stat
+    modifL = (r ^. statModif) cp s'
+    statAm = (r ^. statistic) cp stat
     crIm   = (r ^. criticalHitsImpact) ud cr modifL
     crI    = modifStatLevelToMultiplier s' crIm
   in crI * fromIntegral statAm

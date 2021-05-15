@@ -4,6 +4,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ViewPatterns #-}
 
 
 module Damage.Weather where
@@ -16,48 +17,50 @@ import Types.BuiltIn
 import Types.Pokemon
 import Damage.Interpreter
 
-data WeatherData d a (m :: * -> *) = WeatherData
+data WeatherData d (m :: * -> *) = WeatherData
   {
-    _currentWeather :: a -> Weather
-  , _moveType :: a -> TypeOf
-  , _pokemonType :: a -> Counterparty -> PokemonType
-  , _moveCategory :: a -> DamagingCategory'
-  , _impactOnMove :: TypeOf -> Weather -> Double
+    _currentWeather :: Weather
+  , _moveType :: TypeOf
+  , _pokemonType :: Counterparty -> PokemonType
+  , _moveCategory :: DamagingCategory'
+  , _impactOnMove :: WeatherCase
   , _impactOnSDefence :: DamagingCategory' -> Weather -> PokemonType -> Double
-  , _nextCriterion :: d a m
+  , _nextCriterion :: d m
   }
+
+type WeatherCase = TypeOf -> Weather -> Double
 
 makeClassy ''WeatherData
 
-mkWeatherData ::
-  DamageOps m =>
-  (a -> Weather)
-  -> (a -> TypeOf)
-  -> (a -> Counterparty -> PokemonType)
-  -> (a -> DamagingCategory')
-  -> d a m
-  -> WeatherData d a m
-mkWeatherData wfn tpfn pktfn cfn nxt =
-  WeatherData wfn tpfn pktfn cfn f g nxt
-  where
-    f Fire Sunny  = 1.5
-    f Fire Rainy  = 0.5
-    f Water Sunny = 0.5
-    f Water Rainy = 0.5
-    f _ _         = 1.0
-    g (SpecialMove _) Sandstorm tps
-      | Rock `elem` tps = 0.5
-      | otherwise       = 1.0
-    g _ _ _       = 1.0
+class ToWeatherData a where
+  toWeatherData :: DamageOps m => a -> WeatherData d m
 
+mkWeatherData :: DamageOps m => Weather -> TypeOf -> (Counterparty -> PokemonType) -> DamagingCategory' -> d m -> WeatherData d m
+mkWeatherData w tp cpt cat nxt = WeatherData w tp cpt cat weatherFn rockSandstorm nxt
 
 instance InterpretDamage d => InterpretDamage (WeatherData d) where
-  interp wd dta = do
-    dm <- flip interp dta $ wd ^. nextCriterion
-    let mt = (wd ^. moveType) dta
-    let pt = (wd ^. pokemonType) dta Target
-    let mc = (wd ^. moveCategory) dta
-    let wt = (wd ^. currentWeather) dta
+  interp wd = do
+    dm <- interp $ wd ^. nextCriterion
+    let mt = wd ^. moveType
+    let pt = (wd ^. pokemonType) Target
+    let mc = wd ^. moveCategory
+    let wt = wd ^. currentWeather 
     let mEff = (wd ^. impactOnMove) mt wt
     let ssEff = (wd ^. impactOnSDefence) mc wt pt
     return $ dm <> Damage mEff <> Damage ssEff
+
+
+updateWeatherCase :: (TypeOf, Weather, Double) -> WeatherCase -> WeatherCase
+updateWeatherCase (tp, w, v) wf = \t w' -> if (t, w') == (tp, w) then v else wf t w'
+
+weatherFn =
+  updateWeatherCase (Fire, Sunny, 1.5) .
+  updateWeatherCase (Fire, Rainy, 0.5) .
+  updateWeatherCase (Water, Sunny, 0.5) .
+  updateWeatherCase (Water, Rainy, 1.5) $
+  (\_ _ -> 1.0)
+
+rockSandstorm :: DamagingCategory' -> Weather -> PokemonType -> Double
+rockSandstorm cat w pt = case (cat, w, pt) of
+  (PhysicalMove _, Sandstorm, elem Rock -> True) -> 0.5
+  _ -> 1.0
