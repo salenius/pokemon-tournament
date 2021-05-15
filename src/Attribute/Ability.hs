@@ -398,7 +398,9 @@ _MoldBreaker_ = prism' f g
       "Turboblaze" -> Just (Turboblaze_ Turboblaze)
       _ -> Nothing
 
-notMoldBreaker :: PokemonAbility -> Maybe ()
+notMoldBreaker :: PokemonAbility -> Maybe NotMoldBreaker
 notMoldBreaker = (\ab -> case ab of
                      Just _ -> Nothing
                      Nothing -> Just ()) . preview _MoldBreaker_
+
+type NotMoldBreaker = ()
