@@ -85,12 +85,12 @@ instance PokemonBuild (State String) where
   gender Male       n = modifdesc "Gender" $ "Male " ++ (show $ 100 * n) ++ " %, Female " ++ (show $ 100 * (1-n)) ++ " %"
   gender Female     n = modifdesc "Gender" $ "Female " ++ (show $ 100 * n) ++ " %, Male " ++ (show $ 100 * (1-n)) ++ " %"
   legendary = modify $ flip (++) "Legendary Pokemon"
-  pseudoLegendary = modify $ flip (++) "Pseudolegendary Pokemon"
+  pseudoLegendary = modify $ flip (++) "\n  Pseudolegendary Pokemon"
   megaEvolution _ _ = return ()
   end = return Ready
 
 desc :: Show a => String -> a -> String -> String
-desc d n x = x ++ "\n" ++ "  " ++ " " ++ d ++ ": " ++ show n
+desc d n x = x ++ "\n" ++ "  " ++ d ++ ": " ++ show n
 
 modifdesc :: Show a => String -> a -> State String ()
 modifdesc d n = modify (desc d n)
