@@ -33,6 +33,8 @@ class Monad m => PokemonBuild m where
   gender :: Gender -> Double -> m ()
   male :: Double -> m ()
   male = gender Male
+  genderless :: m ()
+  genderless = gender Genderless 1.0
   legendary :: m ()
   pseudoLegendary :: m ()
   megaEvolution :: m Ready -> a -> m ()
