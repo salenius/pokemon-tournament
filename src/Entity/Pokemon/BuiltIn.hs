@@ -215,6 +215,7 @@ dragonite = do
   weight  210.0
   ability  InnerFocus
   -- hiddenAbility Multiscale
+  pseudoLegendary
   end
 
 salamence = do
@@ -231,6 +232,7 @@ salamence = do
   weight  102.6
   ability  Intimidate
   hiddenAbility Moxie
+  pseudoLegendary
   end
 
 kingdra = do
@@ -278,6 +280,7 @@ hydreigon = do
   height  1.8
   weight  160.0
   ability  Levitate
+  pseudoLegendary
   end
 
 flygon = do
@@ -500,6 +503,7 @@ garchomp = do
   weight  95.0
   ability  SandVeil
   hiddenAbility RoughSkin 
+  pseudoLegendary
   end
 
 spiritomb = do
