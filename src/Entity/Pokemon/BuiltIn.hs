@@ -209,11 +209,11 @@ dragonite = do
   sattack 100
   sdefence 100  
   speed  80
-  typeof 	(Dragon, Flying)
+  typeof  (Dragon, Flying)
   50 % male
-  height 	2.2
-  weight 	210.0
-  ability 	InnerFocus
+  height  2.2
+  weight  210.0
+  ability  InnerFocus
   -- hiddenAbility Multiscale
   end
 
@@ -225,11 +225,11 @@ salamence = do
   sattack 110
   sdefence 80  
   speed  100
-  typeof 	(Dragon, Flying)
+  typeof  (Dragon, Flying)
   50 % male
-  height 	1.5
-  weight 	102.6
-  ability 	Intimidate
+  height  1.5
+  weight  102.6
+  ability  Intimidate
   hiddenAbility Moxie
   end
 
@@ -241,11 +241,11 @@ kingdra = do
   sattack 95
   sdefence 95  
   speed  85
-  typeof 	(Water, Dragon)
+  typeof  (Water, Dragon)
   50 % male
-  height 	1.8
-  weight 	152.0
-  abilities 	SwiftSwim Sniper
+  height  1.8
+  weight  152.0
+  abilities  SwiftSwim Sniper
   -- hiddenAbility Damp
   end
 
@@ -257,11 +257,11 @@ haxorus = do
   sattack 95
   sdefence 95  
   speed  85
-  typeof 	Dragon
+  typeof  Dragon
   50 % male
-  height 	1.8
-  weight 	105.5
-  abilities 	Rivalry MoldBreaker
+  height  1.8
+  weight  105.5
+  abilities  Rivalry MoldBreaker
   -- hiddenAbility Unnerve 
   end
 
@@ -273,11 +273,11 @@ hydreigon = do
   sattack 125
   sdefence 90  
   speed  98
-  typeof 	(Dark, Dragon)
+  typeof  (Dark, Dragon)
   50 % male
-  height 	1.8
-  weight 	160.0
-  ability 	Levitate
+  height  1.8
+  weight  160.0
+  ability  Levitate
   end
 
 flygon = do
@@ -288,11 +288,11 @@ flygon = do
   sattack 80
   sdefence 80 
   speed  100
-  typeof 	(Ground, Dragon)
+  typeof  (Ground, Dragon)
   50 % male
-  height 	2.0
-  weight 	82.0
-  ability 	Levitate
+  height  2.0
+  weight  82.0
+  ability  Levitate
   end
 
 metagross = do
@@ -303,11 +303,11 @@ metagross = do
   sattack 95
   sdefence 90 
   speed  70
-  typeof 	(Steel, Psychic)
+  typeof  (Steel, Psychic)
   genderless
-  height 	1.6
-  weight 	550.0
-  ability 	ClearBody
+  height  1.6
+  weight  550.0
+  ability  ClearBody
   -- hiddenAbility LightMetal 
   end
 
@@ -319,11 +319,11 @@ aggron = do
   sattack 60
   sdefence 60 
   speed  50
-  typeof 	(Steel, Rock)
+  typeof  (Steel, Rock)
   50 % male
-  height 	2.1
-  weight 	360.0
-  abilities 	Sturdy RockHead
+  height  2.1
+  weight  360.0
+  abilities  Sturdy RockHead
   -- hiddenAbility HeavyMetal 
   end
 
@@ -335,11 +335,11 @@ excadrill = do
   sattack 50
   sdefence 65 
   speed  88 
-  typeof 	(Ground, Steel)
+  typeof  (Ground, Steel)
   50 % male
-  height 	0.7
-  weight 	40.4
-  abilities 	SandRush SandForce
+  height  0.7
+  weight  40.4
+  abilities  SandRush SandForce
   hiddenAbility MoldBreaker 
   end
 
@@ -351,11 +351,11 @@ archeops = do
   sattack 112
   sdefence 65 
   speed  110
-  typeof 	(Rock, Flying)
+  typeof  (Rock, Flying)
   87.5 % male
-  height 	1.4
-  weight 	32.0
-  ability 	Defeatist
+  height  1.4
+  weight  32.0
+  ability  Defeatist
   end
 
 cradily = do
@@ -366,11 +366,11 @@ cradily = do
   sattack 81
   sdefence 107 
   speed  43
-  typeof 	(Rock, Grass)
+  typeof  (Rock, Grass)
   87.5 % male
-  height 	1.5
-  weight 	60.4
-  ability 	SuctionCups
+  height  1.5
+  weight  60.4
+  ability  SuctionCups
   hiddenAbility StormDrain 
   end
 
@@ -382,11 +382,11 @@ armaldo = do
   sattack 70
   sdefence 80 
   speed  45
-  typeof 	(Rock, Bug)
+  typeof  (Rock, Bug)
   87.5 % male
-  height 	1.5
-  weight 	68.2
-  ability 	BattleArmor
+  height  1.5
+  weight  68.2
+  ability  BattleArmor
   hiddenAbility SwiftSwim 
   end
 
@@ -398,11 +398,11 @@ milotic = do
   sattack 100
   sdefence 125 
   speed  81
-  typeof 	Water
+  typeof  Water
   50 % male
-  height 	6.2
-  weight 	162.0
-  abilities 	MarvelScale Competitive
+  height  6.2
+  weight  162.0
+  abilities  MarvelScale Competitive
   -- hiddenAbility CuteCharm 
   end
 
@@ -414,11 +414,11 @@ sharpedo = do
   sattack 95
   sdefence 40 
   speed  95
-  typeof 	(Water, Dark)
+  typeof  (Water, Dark)
   50 % male
-  height 	1.8
-  weight 	88.8
-  ability 	RoughSkin
+  height  1.8
+  weight  88.8
+  ability  RoughSkin
   -- hiddenAbility SpeedBoost 
   end
 
@@ -430,11 +430,11 @@ walrein = do
   sattack 95
   sdefence 90 
   speed  65
-  typeof 	(Ice, Water)
+  typeof  (Ice, Water)
   50 % male
-  height 	1.4
-  weight 	150.6
-  abilities 	ThickFat IceBody
+  height  1.4
+  weight  150.6
+  abilities  ThickFat IceBody
   hiddenAbility Oblivious 
   end
 
@@ -446,11 +446,11 @@ ludicolo = do
   sattack 90
   sdefence 100 
   speed  70
-  typeof 	(Water, Grass)
+  typeof  (Water, Grass)
   50 % male
-  height 	1.5
-  weight 	55.0
-  abilities 	SwiftSwim RainDish
+  height  1.5
+  weight  55.0
+  abilities  SwiftSwim RainDish
   -- hiddenAbility OwnTempo 
   end
 
@@ -462,11 +462,11 @@ swampert = do
   sattack 85
   sdefence 90 
   speed  60
-  typeof 	(Water, Ground)
+  typeof  (Water, Ground)
   87.5 % male
-  height 	1.5
-  weight 	81.9
-  ability 	Torrent
+  height  1.5
+  weight  81.9
+  ability  Torrent
   -- hiddenAbility Damp 
   end
 
@@ -479,10 +479,10 @@ starmie = do
   sdefence 85 
   speed  115
   genderless
-  typeof 	(Water, Psychic)
-  height 	1.1
-  weight 	80.0
-  abilities 	Illuminate NaturalCure
+  typeof  (Water, Psychic)
+  height  1.1
+  weight  80.0
+  abilities  Illuminate NaturalCure
   -- hiddenAbility Analytic 
   end
 
@@ -494,11 +494,11 @@ garchomp = do
   sattack 80
   sdefence 85 
   speed  102
-  typeof 	(Dragon, Ground)
+  typeof  (Dragon, Ground)
   50 % male
-  height 	1.9
-  weight 	95.0
-  ability 	SandVeil
+  height  1.9
+  weight  95.0
+  ability  SandVeil
   hiddenAbility RoughSkin 
   end
 
@@ -510,11 +510,11 @@ spiritomb = do
   sattack 92
   sdefence 108 
   speed  35
-  typeof 	(Ghost, Dark)
+  typeof  (Ghost, Dark)
   50 % male
-  height 	1.0
-  weight 	108.0
-  ability 	Pressure
+  height  1.0
+  weight  108.0
+  ability  Pressure
   -- hiddenAbility Infiltrator 
   end
 
@@ -526,11 +526,11 @@ roserade = do
   sattack 125
   sdefence 105 
   speed  90
-  typeof 	(Grass, Poison)
+  typeof  (Grass, Poison)
   50 % male
-  height 	0.9
-  weight 	14.5
-  abilities 	NaturalCure PoisonPoint
+  height  0.9
+  weight  14.5
+  abilities  NaturalCure PoisonPoint
   -- hiddenAbility Technician 
   end
 
@@ -542,12 +542,12 @@ togekiss = do
   sattack 120
   sdefence 115 
   speed  80
-  typeof 	(Fairy, Flying)
+  typeof  (Fairy, Flying)
   87.5 % male
-  height 	1.5
-  weight 	38.0
-  abilities 	Hustle SereneGrace
-  hiddenAbility SuperLuck 
+  height  1.5
+  weight  38.0
+  abilities  Hustle SereneGrace
+  -- hiddenAbility SuperLuck 
   end
 
 lucario = do
@@ -558,11 +558,11 @@ lucario = do
   sattack 115
   sdefence 70 
   speed  90
-  typeof 	(Fighting, Steel)
+  typeof  (Fighting, Steel)
   87.5 % male
-  height 	1.2
-  weight 	54.0
-  abilities 	Steadfast InnerFocus
+  height  1.2
+  weight  54.0
+  abilities  Steadfast InnerFocus
   -- hiddenAbility Justified 
   end
 
@@ -574,11 +574,11 @@ glaceon = do
   sattack 130
   sdefence 95 
   speed  65
-  typeof 	Ice
+  typeof  Ice
   87.5 % male
-  height 	0.8
-  weight 	25.9
-  ability 	SnowCloak
+  height  0.8
+  weight  25.9
+  ability  SnowCloak
   hiddenAbility IceBody 
   end
 
@@ -590,11 +590,11 @@ volcarona = do
   sattack 135
   sdefence 105 
   speed  100
-  typeof 	(Bug, Fire)
+  typeof  (Bug, Fire)
   50 % male
-  height 	1.6
-  weight 	46.0
-  ability 	FlameBody
+  height  1.6
+  weight  46.0
+  ability  FlameBody
   -- hiddenAbility Swarm 
   end
 
@@ -606,11 +606,11 @@ conkeldurr = do
   sattack 55
   sdefence 65 
   speed  45
-  typeof 	Fighting
+  typeof  Fighting
   75 % male
-  height 	1.4
-  weight 	87.0
-  abilities 	Guts SheerForce
+  height  1.4
+  weight  87.0
+  abilities  Guts SheerForce
   -- hiddenAbility IronFist 
   end
 
@@ -622,11 +622,11 @@ reuniclus = do
   sattack 125
   sdefence 85 
   speed  30
-  typeof 	Psychic
+  typeof  Psychic
   50 % male
-  height 	1.0
-  weight 	20.1
-  abilities 	Overcoat MagicGuard
+  height  1.0
+  weight  20.1
+  abilities  Overcoat MagicGuard
   hiddenAbility Regenerator 
   end
 
@@ -638,11 +638,11 @@ krookodile = do
   sattack 65
   sdefence 70 
   speed  92
-  typeof 	(Ground, Dark)
+  typeof  (Ground, Dark)
   50 % male
-  height 	1.5
-  weight 	96.3
-  abilities 	Intimidate Moxie
+  height  1.5
+  weight  96.3
+  abilities  Intimidate Moxie
   -- hiddenAbility AngerPoint 
   end
 
@@ -654,11 +654,11 @@ chandelure = do
   sattack 145
   sdefence 90 
   speed  80
-  typeof 	(Ghost, Fire)
+  typeof  (Ghost, Fire)
   50 % male
-  height 	1.0
-  weight 	34.3
-  abilities 	FlashFire FlameBody
+  height  1.0
+  weight  34.3
+  abilities  FlashFire FlameBody
   -- hiddenAbility Infiltrator 
   end
 
@@ -670,11 +670,11 @@ braviary = do
   sattack 57
   sdefence 75 
   speed  80
-  typeof 	(Normal, Flying)
+  typeof  (Normal, Flying)
   100 % male
-  height 	1.5
-  weight 	41.0
-  abilities 	KeenEye SheerForce
+  height  1.5
+  weight  41.0
+  abilities  KeenEye SheerForce
   -- hiddenAbility Defiant 
   end
 
