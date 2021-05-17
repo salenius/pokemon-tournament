@@ -78,6 +78,7 @@ class (MoveBasic m, TweekProbabilities m) => EffectWhenHits m where
   switch :: Counterparty -> m ()
   lower :: Counterparty -> ModifStat -> Int -> m ()
   raise :: Counterparty -> ModifStat -> Int -> m ()
+  confuse :: Counterparty -> m ()
 
 infixl 3 %
 
