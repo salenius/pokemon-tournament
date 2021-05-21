@@ -1,0 +1,375 @@
+{-# LANGUAGE RankNTypes #-}
+
+
+module Domain.SideEffect where
+
+import Domain.Common hiding (poisoned,burned,paralyzed)
+import Domain.Logic
+import Attribute
+import Attribute.HP
+import Attribute.Damage
+import Types.BuiltIn
+import Stats.Base
+import Prelude hiding (or,and)
+import Control.Lens (view, review,prism',Prism')
+
+class (CounterpartyGetter m,
+       MoldBreakerGetter m,
+       PokemonAttrGetter m,
+       Monad m) => SideEffect m where
+  pokemonTypeIs :: Player -> TypeOf -> m Bool
+  targetType :: TypeOf -> m Bool
+  targetType tp = getTarget >>= flip pokemonTypeIs tp
+  userType :: TypeOf -> m Bool
+  userType tp = getUser >>= flip pokemonTypeIs tp
+  pokemonAbilityIs :: Player -> (Player -> m Bool) -> m Bool
+  notIn :: (TypeOf -> m Bool) -> [TypeOf] -> m Bool
+  pokemonIs :: Player -> Ailment -> m Bool
+  targetIs :: Ailment -> m Bool
+  targetIs ai = getTarget >>= flip pokemonIs ai
+  userIs :: Ailment -> m Bool
+  userIs ai = getUser >>= flip pokemonIs ai
+  damageDealt :: m Damage
+  leaveOneHp :: Player -> m Action
+  is :: (m Bool -> m Bool) -> m Bool -> m Bool
+  is = ($)
+  isNot :: (m Bool -> m Bool) -> m Bool -> m Bool
+  isNot cpf b = do
+    x <- cpf b
+    return $ x /= True
+  (%) :: Double -> m Action -> m Action
+  ---- Logic
+  no :: ((Player -> m Bool) -> m Bool) -> (Player -> m Bool) -> m Bool
+    --- HP
+  hpCurrently :: Player -> m HP
+  hpCurrentlyInPct :: Player -> m Double
+  hpCurrentlyInPct plr = do
+    x <- hpCurrently plr
+    return $ hpPct x
+  hpCurrentlyLessThanPct :: Double -> Player -> m Bool
+  hpCurrentlyLessThanPct pct plr = do
+    x <- hpCurrentlyInPct plr
+    return $ pct > x
+  hpCurrentlyEqualToPct :: Double -> Player -> m Bool
+  hpCurrentlyEqualToPct pct plr = do
+    x <- hpCurrentlyInPct plr
+    return $ pct == x
+  fullHp :: Player -> m Bool
+  fullHp plr = hpCurrentlyEqualToPct 1.0 plr
+  zeroHp :: Player -> m Bool
+  zeroHp plr =  hpCurrentlyEqualToPct 0 plr
+  
+  --- Abilities
+  comatose :: Player -> m Bool
+  immunity :: Player -> m Bool
+  synchronize :: Player -> m Bool
+  corrosion :: Player -> m Bool
+  safeguard :: Player -> m Bool
+  intimidate :: Player -> m Bool
+  cloudNine :: Player -> m Bool
+  airLock :: Player -> m Bool
+  clearBody :: Player -> m Bool
+  hyperCutter :: Player -> m Bool
+  whiteSmoke :: Player -> m Bool
+  sandStream :: Player -> m Bool
+  snowWarning :: Player -> m Bool
+  drizzle :: Player -> m Bool
+  draught, suctionCups :: Player -> m Bool
+  bigPecks, moxie :: Player -> m Bool
+  keenEye, ownTempo, sturdy :: Player -> m Bool
+  innerFocus, waterVeil, waterBubble :: Player -> m Bool
+  steadfast, cuteCharm :: Player -> m Bool
+  limber, static, poisonTouch, flameBody, poisonPoint, cutemCharm :: Player -> m Bool
+  -- Items
+  rockyHelmet :: Player -> m Bool
+  focusSash, sitrusBerry :: Player -> m Bool
+  
+  -- Ops
+  putAilment :: Counterparty -> Ailment -> m Action
+  putConfusion :: Counterparty -> m Action
+  setSandstorm :: m Action
+  setHail :: m Action
+  setRainy :: m Action
+  setSunny :: m Action
+  lowerStat :: Counterparty -> ModifStat -> Int -> m Action
+  raiseStat :: Counterparty -> ModifStat -> Int -> m Action
+  putFlinch :: Counterparty -> m Action
+  addPctOfMaxHp :: Counterparty -> Double -> m Action
+  dropItem :: Counterparty -> m Action
+  putDamage :: Counterparty -> m Action
+  putSwitch :: Counterparty -> m Action
+  
+infixr 6 %
+
+
+ailmented' :: Prism' BadAilment' a -> a -> Ailment
+ailmented' f g = review (_BadAilment' .  f) g
+poisoned = ailmented' _Poisoned Poisoned'
+burned = ailmented' _Burned Burned'
+paralyzed = ailmented' _Paralyzed Paralyzed'
+healthy = review _Healthy Healthy'
+
+poisonTarget :: SideEffect m => m Action
+poisonTarget =
+  ailmentedTarget
+  (targetType `notIn` [Steel,Poison])
+  (targetHas `no` immunity) poisoned poisonUser
+
+poisonUser :: SideEffect m => m Action
+poisonUser = ailmentedUser (userType `notIn` [Steel,Poison]) (userHas `no` immunity) poisoned
+
+paralyzeUser :: SideEffect m => m Action
+paralyzeUser = do
+  userHas corrosion
+  --> ailmentedUser (userType Electric) (userHas `no` limber) paralyzed
+
+paralyzeTarget :: SideEffect m => m Action
+paralyzeTarget =
+  ailmentedTarget (targetType Electric) (targetHas `no` limber) paralyzed paralyzeUser
+
+burnTarget :: SideEffect m => m Action
+burnTarget =
+  ailmentedTarget (targetType Fire)
+  (targetHas `no` waterVeil `or` targetHas `no` waterBubble) 
+  burned burnUser
+
+burnUser :: SideEffect m => m Action
+burnUser =
+  ailmentedUser (userType Fire) (userHas `no` waterVeil `or` userHas `no` waterBubble) burned
+
+
+switchUser :: SideEffect m => m Action
+switchUser = do
+  userHas `no` suctionCups `or` userHas zeroHp
+    --> do
+      putSwitch User
+      afterSwitchingUser
+
+switchTarget :: SideEffect m => m Action
+switchTarget = do
+  targetHas `no` suctionCups `or` userHas moldBreaker `or` userHas zeroHp
+    --> do
+      putSwitch Target
+      afterSwitchingTarget
+
+
+confuseTarget :: SideEffect m => m Action
+confuseTarget = do
+  userHas moldBreaker `or` targetHas `no` ownTempo
+    --> putConfusion Target
+
+lowerUserStatByTarget :: SideEffect m => ModifStat -> Int -> m Action
+lowerUserStatByTarget Attack' x = do
+  userHas `no` hyperCutter `and`
+    userHas `no` clearBody `and`
+    userHas `no` whiteSmoke
+    --> lowerStat User Attack' x
+lowerUserStatByTarget Defence' x = do
+  userHas `no` bigPecks `and`
+    userHas `no` clearBody `and`
+    userHas `no` whiteSmoke
+    --> lowerStat User Defence' x
+lowerUserStatByTarget Accuracy' x = do
+   userHas `no` keenEye `and`
+    userHas `no` clearBody `and`
+    userHas `no` whiteSmoke
+    --> lowerStat User Accuracy' x
+lowerUserStatByTarget y x = do 
+  userHas `no` clearBody `and`
+    userHas `no` whiteSmoke
+    --> lowerStat User y x
+
+lowerUserStatByUser  :: SideEffect m => ModifStat -> Int -> m Action
+lowerUserStatByUser = lowerStat User
+
+increaseUserStat :: SideEffect m => ModifStat -> Int -> m Action
+increaseUserStat = raiseStat User
+
+increaseTargetStat  :: SideEffect m => ModifStat -> Int -> m Action
+increaseTargetStat = raiseStat Target
+
+lowerTargetStat :: SideEffect m => ModifStat -> Int -> m Action
+lowerTargetStat Attack' x = do
+  targetHas `no` hyperCutter `and`
+    targetHas `no` clearBody `and`
+    targetHas `no` whiteSmoke `or'`
+    userHas moldBreaker
+    --> lowerStat Target Attack' x
+lowerTargetStat Defence' x = do
+  targetHas `no` bigPecks `and`
+    targetHas `no` clearBody `and`
+    targetHas `no` whiteSmoke `or'`
+    userHas moldBreaker
+    --> lowerStat Target Defence' x
+lowerTargetStat Accuracy' x = do
+   targetHas `no` keenEye `and`
+    targetHas `no` clearBody `and`
+    targetHas `no` whiteSmoke `or'`
+    userHas moldBreaker
+    --> lowerStat Target Accuracy' x
+lowerTargetStat y x = do 
+  targetHas `no` clearBody `and`
+    targetHas `no` whiteSmoke `or'`
+    userHas moldBreaker
+    --> lowerStat Target y x
+
+flinchTarget :: SideEffect m => m Action
+flinchTarget = do
+  targetHas `no` innerFocus `or`
+    userHas moldBreaker
+    --> targetHas steadfast
+    --> do
+         putFlinch Target
+         increaseTargetStat Speed' 1
+    `othercase` putFlinch Target
+
+contactEffect :: SideEffect m => m Action
+contactEffect = do
+  targetHas static
+    --> 30 % paralyzeUser
+  targetHas poisonPoint
+    --> 30 % poisonUser
+  targetHas flameBody
+    --> 30 % burnUser
+  targetHas rockyHelmet
+    --> addPctOfMaxHp Target 0.1667
+  userHas poisonTouch
+    --> 30 % poisonTarget
+  targetHas cuteCharm
+    --> 30 % infatuateTarget
+
+infatuateTarget :: SideEffect m => m Action
+infatuateTarget = undefined
+
+--- This is used when calculating damage losses to the user
+--- in total
+dealDamageToUser :: SideEffect m => m Action
+dealDamageToUser = do
+  userHas `no` (hpCurrentlyLessThanPct 1.0)
+    --> userHas sturdy `or` userHas focusSash
+      --> dealDamageToUserWithFullHp 
+      `othercase` afterDamageForUser
+    `othercase` afterDamageForUser
+
+--- This is used when calculating damage losses to the targettype
+--- in total
+dealDamageToTarget :: SideEffect m => m Action
+dealDamageToTarget = do
+  targetHas `no` (hpCurrentlyLessThanPct 1.0)
+    --> targetHas sturdy `or` targetHas focusSash
+      --> dealDamageToTargetWithFullHp 
+      `othercase` afterDamageForTarget
+    `othercase` afterDamageForTarget
+
+
+
+---- HP helpers
+
+dealDamageToTargetWithFullHp :: SideEffect m => m Action
+dealDamageToTargetWithFullHp = do
+  targetHas ohkoHit `and` targetHas sturdy `and` userHas `no` moldBreaker
+    --> targetDoes leaveOneHp
+    `othercase` targetHas ohkoHit `and` targetHas focusSash
+    --> do
+      dropItem Target
+      targetDoes leaveOneHp
+  afterDamageForTarget
+
+dealDamageToUserWithFullHp :: SideEffect m => m Action
+dealDamageToUserWithFullHp = do
+  userHas ohkoHit `and` userHas sturdy
+    --> userDoes leaveOneHp
+    `othercase` userHas ohkoHit `and` userHas focusSash
+      --> do
+        dropItem User
+        userDoes leaveOneHp
+  afterDamageForUser
+
+-- All damage loss logic here for target in case
+-- Focus Sash and Sturdy have been gone through
+afterDamageForTarget :: SideEffect m => m Action
+afterDamageForTarget = do
+  putDamage Target
+  targetHas sitrusBerry `and` targetHas `no` zeroHp
+    --> addPctOfMaxHp Target 0.25
+  userHas moxie `and` targetHas zeroHp
+    --> increaseUserStat Attack' 1
+  targetHas zeroHp
+    --> switchTarget
+
+afterDamageForUser :: SideEffect m => m Action
+afterDamageForUser = do
+  putDamage User
+  userHas sitrusBerry `and` userHas `no` zeroHp
+    --> addPctOfMaxHp User 0.25
+  userHas zeroHp
+    --> switchUser
+
+
+ohkoHit :: SideEffect m => Player -> m Bool
+ohkoHit plr = do
+  Damage dam <- damageDealt
+  curHp <- fromIntegral . view currentHp <$> hpCurrently plr
+  return $ dam >= curHp
+
+----- Switch helpers
+
+afterSwitchingUser :: SideEffect m => m Action
+afterSwitchingUser =  afterSwitchingPlayer userHas targetHas lowerTargetStat
+
+afterSwitchingTarget :: SideEffect m => m Action
+afterSwitchingTarget = afterSwitchingPlayer targetHas userHas lowerUserStatByTarget
+
+--------------------------
+
+---- Helper function
+ailmentedTarget :: SideEffect m => m Bool -> m Bool -> Ailment -> m Action -> m Action
+ailmentedTarget noBlockingAbility noBlockingTypes ailm next = do
+  x <- noBlockingTypes
+   `and'` targetHas `no` comatose `or` noBlockingAbility `or` userHas moldBreaker
+   `and'` targetIs healthy
+   `and'` targetHas `no` safeguard
+    --> putAilment Target ailm
+  userHas synchronize `and` isApplied x
+    --> next
+  where
+    isApplied x = (==) x <$> applied
+
+ailmentedUser :: SideEffect m => m Bool -> m Bool -> Ailment -> m Action
+ailmentedUser noBlockingAbility noBlockingTypes ailm = do
+  noBlockingTypes `or` userHas corrosion
+   `and'` targetHas `no` comatose `or` noBlockingAbility
+   `and'` targetIs healthy
+   `and'` targetHas `no` safeguard
+    --> putAilment Target ailm
+
+
+afterSwitchingPlayer
+  :: SideEffect m =>
+  ((Player -> m Bool) -> m Bool)
+  -> ((Player -> m Bool) -> m Bool)
+  -> (ModifStat -> Int -> m Action)
+  -> m Action
+afterSwitchingPlayer enteringPokemonHas existingPokemonHas lowerS  = do
+  enteringPokemonHas intimidate `and'`
+    existingPokemonHas `no` clearBody
+    `or` existingPokemonHas `no` hyperCutter
+    `or` existingPokemonHas `no` whiteSmoke
+    --> lowerS Attack' 1
+  enteringPokemonHas sandStream `and'`
+    existingPokemonHas `no` cloudNine
+    `or` existingPokemonHas `no` airLock
+    --> setSandstorm
+  enteringPokemonHas snowWarning `and'`
+    existingPokemonHas `no` cloudNine
+    `or` existingPokemonHas `no` airLock
+    --> setHail
+  enteringPokemonHas draught `and'`
+    existingPokemonHas `no` cloudNine
+    `or` existingPokemonHas `no` airLock
+    --> setSunny
+  enteringPokemonHas drizzle `and'`
+    existingPokemonHas `no` cloudNine
+    `or` existingPokemonHas `no` airLock
+    --> setRainy
+
