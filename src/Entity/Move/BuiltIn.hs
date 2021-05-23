@@ -1,5 +1,8 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FunctionalDependencies #-}
+
 
 module Entity.Move.BuiltIn where
 
@@ -14,13 +17,13 @@ import Prelude hiding (break)
 import Domain.Common
 
 type BasicMove = forall mv. (MoveBasic mv) => mv ()
-type EffectiveMove = forall mv. (EffectWhenHits mv) => mv ()
+type EffectiveMove = forall mv. forall b. (EffectWhenHits mv b) => mv ()
 
-acrobatics :: (BattleStrikeGetter m, MoveBasic m, BasepowerModification m) => m ()
+acrobatics :: (BattleStrikeGetter m, MoveBasic m, BasepowerModification m b) => m ()
 airSlash :: EffectiveMove
 aquaJet :: BasicMove
 auraSphere :: BasicMove
-avalanche :: (BasepowerModification m) => m ()
+avalanche :: (BasepowerModification m b) => m ()
 blizzard :: EffectiveMove
 bodySlam :: EffectiveMove
 braveBird :: EffectiveMove
@@ -37,15 +40,15 @@ earthPower :: EffectiveMove
 earthquake :: BasicMove
 energyBall :: EffectiveMove
 extremeSpeed :: BasicMove
-fakeOut :: (ModifyDamage m, EffectWhenHits m) => m ()
+fakeOut :: (ModifyDamage m b, EffectWhenHits m b) => m ()
 fireBlast :: EffectiveMove
 firePunch :: EffectiveMove
 flamethrower :: EffectiveMove
-flareBlitz :: (ModifyDamage m, EffectWhenHits m) => m ()
+flareBlitz :: (ModifyDamage m b, EffectWhenHits m b) => m ()
 flashCannon :: EffectiveMove
 focusBlast :: EffectiveMove
 gigaDrain :: EffectiveMove
-grassKnot :: (BasepowerModification m) => m ()
+grassKnot :: (BasepowerModification m b) => m ()
 hammerArm :: EffectiveMove
 headSmash :: EffectiveMove
 heatWave :: EffectiveMove
@@ -60,10 +63,10 @@ leafStorm :: EffectiveMove
 leechSeed :: EffectiveMove
 lightScreen :: EffectiveMove
 machPunch :: EffectiveMove
-metalBurst :: (BasepowerModification m, ModifyDamage m) => m ()
+metalBurst :: (BasepowerModification m b, ModifyDamage m b) => m ()
 muddyWater :: EffectiveMove
-outrage :: (ModifyDamage m, EffectWhenHits m) => m ()
-payback :: (BasepowerModification m, ModifyDamage m) => m ()
+outrage :: (ModifyDamage m b, EffectWhenHits m b) => m ()
+payback :: (BasepowerModification m b, ModifyDamage m b) => m ()
 protect :: EffectiveMove
 psychic :: EffectiveMove
 quickAttack :: BasicMove
@@ -71,18 +74,18 @@ quiverDance :: EffectiveMove
 rainDance :: EffectiveMove
 reflect :: EffectiveMove
 rest :: EffectiveMove
-rockBlast :: (ModifyDamage m) => m ()
+rockBlast :: (ModifyDamage m b) => m ()
 rockSlide :: EffectiveMove
 sandstorm :: EffectiveMove
-scald :: (ModifyDamage m, EffectWhenHits m) => m ()
+scald :: (ModifyDamage m b, EffectWhenHits m b) => m ()
 seedBomb :: BasicMove
 shadowBall :: EffectiveMove
-sheerCold :: (ModifyDamage m, BasepowerModification m) => m ()
+sheerCold :: (ModifyDamage m b, BasepowerModification m b) => m ()
 signalBeam :: EffectiveMove
 sleepPowder :: EffectiveMove
 sludgeBomb :: EffectiveMove
-solarBeam :: (ModifyDamage m, BasepowerModification m) => m ()
-stoneEdge :: (ModifyDamage m) => m ()
+solarBeam :: (ModifyDamage m b, BasepowerModification m b) => m ()
+stoneEdge :: (ModifyDamage m b) => m ()
 sunnyDay :: EffectiveMove
 superpower :: EffectiveMove
 surf :: BasicMove
@@ -94,7 +97,7 @@ uTurn :: EffectiveMove
 voltTackle :: EffectiveMove
 waterfall :: EffectiveMove
 waterPulse :: EffectiveMove
-waterSpout :: (BasepowerModification m) => m ()
+waterSpout :: (Monad b, BattleStrikeGetter b, BasepowerModification m b) => m ()
 wildCharge :: EffectiveMove
 willOWisp :: EffectiveMove
 woodHammer :: EffectiveMove
@@ -683,8 +686,7 @@ metalBurst = do
   physical
   pp 10
   makes `no` contact
-  pd <- previousDamage
-  constantDamage pd
+  constantDamage previousDamage
   where
     previousDamage = do
       x <- getPrevStrike
@@ -775,14 +777,14 @@ sheerCold = do
   special
   pp 5
   accuracy 0.30
-  usr <- getUser
-  trgt <- getTarget
-  lvl <- getLevel usr
-  lvl' <- getLevel trgt
-  ohko (basedOnLevelDiff (fromIntegral lvl) (fromIntegral lvl'))
+  ohko basedOnLevelDiff
   where
-    basedOnLevelDiff lvl lvl' ac =
-      ac + lvl / 100 - lvl' / 100
+    basedOnLevelDiff ac = do
+      usr <- getUser
+      trgt <- getTarget
+      lvl <- fromIntegral <$> getLevel usr
+      lvl' <- fromIntegral <$> getLevel trgt
+      return $ ac + lvl / 100 - lvl' / 100
 
 payback = do
   dark
@@ -795,3 +797,12 @@ payback = do
       return $ case mv of
         Just _ -> True
         _      -> False
+
+----------
+
+-- targetAttacksFirst :: BattleStrikeGetter m => m Bool
+-- targetAttacksFirst = do
+  -- mv <- getPrevStrike
+  -- return $ case mv of
+    -- Just _ -> True
+    -- _      -> False

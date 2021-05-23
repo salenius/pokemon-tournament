@@ -1,3 +1,9 @@
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+
+
 module Entity.Move.Algebra where
 
 import Types.BuiltIn
@@ -66,18 +72,18 @@ class Monad m => MoveBasic m where
   contact :: MakesContact -> m ()
   priority :: Int -> m ()
 
-class MoveBasic m => TweekProbabilities m where
+class MoveBasic m => TweekProbabilities m b | m -> b where
   (%) :: Double -> m () -> m ()
-  exceptIf :: m () -> m Bool -> m ()
+  exceptIf :: m () -> b Bool -> m ()
 
-class (MoveBasic m, BattleStrikeGetter m) => BasepowerModification m where
-  multiplyBy :: Double -> m () -> m Bool -> m ()
+class (MoveBasic m, BattleStrikeGetter b) => BasepowerModification m b | m -> b where
+  multiplyBy :: Double -> m () -> b Bool -> m ()
   multiplyBy i = modifyBy (\x v -> if x then v * i else v)
-  doubleIf :: m () -> m Bool -> m ()
+  doubleIf :: m () -> b Bool -> m ()
   doubleIf = multiplyBy 2
-  modifyBy :: (a -> Double -> Double) -> m () -> m a -> m ()
+  modifyBy :: (a -> Double -> Double) -> m () -> b a -> m ()
 
-class (MoveBasic m, TweekProbabilities m) => EffectWhenHits m where
+class (MoveBasic m, TweekProbabilities m b) => EffectWhenHits m b | m -> b where
   causeAilment :: Ailment -> Counterparty -> m ()
   heal :: Counterparty -> m ()
   heal = causeAilment $ review _Healthy Healthy'
@@ -112,18 +118,18 @@ class (MoveBasic m, TweekProbabilities m) => EffectWhenHits m where
 infixl 3 %
 infixl 3 `exceptIf`
 
-class (MoveBasic m, TweekProbabilities m) => ModifyDamage m where
+class (MoveBasic m, TweekProbabilities m b) => ModifyDamage m b | m -> b where
   increasedCrit :: Int -> m ()
   editTypeAdvantage :: (TypeOf, TypeEffect) -> m () 
   editStab :: Double -> m ()
-  constantDamage :: Double -> m ()
+  constantDamage :: b Double -> m ()
   tweekRatio :: (Counterparty, ModifStat) -> (Counterparty, ModifStat) -> m ()
   chargeMove :: Int -> m ()
   lockMove :: m ()
   multiHit :: [(Int, Double)] -> m ()
   turnCountOnBattle :: (Int -> Bool) -> m ()
   thaw :: Counterparty -> m ()
-  ohko :: (Double -> Double) -> m ()
+  ohko :: (Double -> b Double) -> m ()
 
 
 data MakesContact = Doesn'tMakeContact | MakesContact deriving (Eq,Show,Ord,Enum)
@@ -137,7 +143,7 @@ instance Bounded MakesContact where
 makes :: (Monad m, Bounded a) => (a -> m ()) -> m ()
 makes f = f minBound
 
-start :: EffectWhenHits m => Weather -> m ()
+start :: EffectWhenHits m b => Weather -> m ()
 start = changeWeather
 
 no :: (Monad m, Bounded a) => ((a -> m ()) -> m ()) -> ((a -> m ()) -> m ())
@@ -164,3 +170,7 @@ sandStorm = Sandstorm
 
 lightScreen' = LightScreen
 reflect' = Reflect
+
+-----
+
+-- type ReadBattle a = forall m. (BattleStrikeGetter m) => m a
