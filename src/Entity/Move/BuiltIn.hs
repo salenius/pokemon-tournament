@@ -15,16 +15,20 @@ import Types.BuiltIn
 import Entity.Move.Algebra
 import Prelude hiding (break)
 import Domain.Common
+import Domain.Logic
 
 type BasicMove = forall mv. (MoveBasic mv) => mv ()
 type EffectiveMove = forall mv. forall b. (EffectWhenHits mv b) => mv ()
+
+end :: Monad m => m ()
+end = return ()
 
 acrobatics :: (BattleStrikeGetter m, MoveBasic m, BasepowerModification m b) => m ()
 airSlash :: EffectiveMove
 aquaJet :: BasicMove
 auraSphere :: BasicMove
 avalanche :: (BasepowerModification m b) => m ()
-blizzard :: EffectiveMove
+blizzard :: (ModifyDamage m b, EffectWhenHits m b, BattleStrikeGetter b) => m ()
 bodySlam :: EffectiveMove
 braveBird :: EffectiveMove
 brickBreak :: EffectiveMove
@@ -84,7 +88,7 @@ sheerCold :: (ModifyDamage m b, BasepowerModification m b) => m ()
 signalBeam :: EffectiveMove
 sleepPowder :: EffectiveMove
 sludgeBomb :: EffectiveMove
-solarBeam :: (ModifyDamage m b, BasepowerModification m b) => m ()
+solarBeam :: (BattleStrikeGetter b, ModifyDamage m b, BasepowerModification m b) => m ()
 stoneEdge :: (ModifyDamage m b) => m ()
 sunnyDay :: EffectiveMove
 superpower :: EffectiveMove
@@ -256,6 +260,11 @@ blizzard = do
   basepower 110
   accuracy 0.7
   10 % freeze target
+  bypassesAccuracyCheckIf it'sHailing
+  where
+    it'sHailing = do
+      w <- getWeather
+      return $ w == Hail
 
 fireBlast = do
   fire
