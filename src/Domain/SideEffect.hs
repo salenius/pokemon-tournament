@@ -86,6 +86,7 @@ class (CounterpartyGetter m,
   focusSash, sitrusBerry, whiteHerb :: Player -> m Bool
   
   -- Ops
+  getDamage :: m Damage
   putAilment :: Counterparty -> Ailment -> m Action
   putConfusion :: Counterparty -> m Action
   setSandstorm :: m Action
@@ -98,7 +99,12 @@ class (CounterpartyGetter m,
   addPctOfMaxHp :: Counterparty -> Double -> m Action
   dropItem :: Counterparty -> m Action
   putDamage :: Counterparty -> m Action
-  putRecoil :: m Action
+  putRecoil :: Double -> m Action
+  drainDamage :: Double -> m Action
+  dealtDamage :: m Bool
+  dealtDamage = do
+    Damage dam <- getDamage
+    return $ dam > 0
   putSwitch :: Counterparty -> m Action
   putLeechSeed :: Counterparty -> m Action
   putLightScreen :: Counterparty -> Int -> m Action
@@ -152,12 +158,33 @@ freezeTarget = do
     `and'` targetHas `no` safeguard
     --> putAilment Target frozen
 
+freezeUser :: SideEffect m => m Action
+freezeUser = do
+  userHas `no` comatose `or` userHas `no` magmaArmor
+    `and` userType `notIn` [Ice]
+    `and` userIs healthy
+    `and` userHas `no` safeguard
+    --> putAilment User frozen
+
 sleepTarget :: SideEffect m => m Action
 sleepTarget = do
-  targetHas `no` comatose `or` targetHas `no` vitalSpirit `or` targetHas `no` insomnia `or` userHas moldBreaker
+  targetHas `no` comatose `and` targetHas `no` vitalSpirit `and` targetHas `no` insomnia `or` userHas moldBreaker
     `and'` targetIs healthy
     `and'` targetHas `no` safeguard
     --> putAilment Target sleep
+
+sleepUserByItself :: SideEffect m => m Action
+sleepUserByItself = do
+  userHas `no` comatose `and` userHas `no` vitalSpirit `and` userHas `no` insomnia
+    `and` userHas `no` safeguard
+    --> putAilment Target sleep
+
+healUser :: SideEffect m => m Action
+healUser = putAilment User healthy
+
+healTarget :: SideEffect m => m Action
+healTarget = putAilment Target healthy
+
 
 switchUser :: SideEffect m => m Action
 switchUser = do
@@ -291,10 +318,10 @@ leechSeedTarget = do
 infatuateTarget :: SideEffect m => m Action
 infatuateTarget = undefined
 
-causeRecoil :: SideEffect m => m Action
-causeRecoil = do
+causeRecoil :: SideEffect m => Double -> m Action
+causeRecoil pct = do
   userHas `no` rockHead
-    --> dealDamageToUser putRecoil
+    --> dealDamageToUser (putRecoil pct)
 
 --- This is used when calculating damage losses to the user
 --- in total
