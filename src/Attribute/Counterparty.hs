@@ -3,6 +3,9 @@
 
 module Attribute.Counterparty where
 
+
+data Player = Player1 | Player2 deriving (Eq,Show,Read,Ord,Enum)
+
 newtype UserHas a = UserHas a deriving (Eq,Show,Read,Ord,Functor)
 
 newtype TargetHas a = TargetHas a deriving (Eq,Show,Read,Ord,Functor)
