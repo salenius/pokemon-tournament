@@ -3,11 +3,16 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 
 module Stats.Calc (
   StatisticFactors(..)
   ,ModifiedStatisticFactors
+  ,HasStatisticFactors
+  ,statisticFactors
   ,level
   ,baseStat
   ,nature
@@ -44,7 +49,7 @@ data StatisticFactors modif = StatisticFactors
   , _modifications :: modif
   } deriving (Eq,Show,Ord,Generic,Functor)
 
-makeLenses ''StatisticFactors
+makeClassy ''StatisticFactors
 
 type Statistic = Int
 
