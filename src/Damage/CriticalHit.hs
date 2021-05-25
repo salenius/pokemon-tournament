@@ -3,6 +3,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes #-}
 
 
 module Damage.CriticalHit where
@@ -15,122 +16,96 @@ import Attribute.Ailment
 import Attribute.Item
 import Attribute.Counterparty
 import Helper.Parse
+import Algebra.Pokemon
+import Data.Maybe
 
 data CriticalHit = NotCritical | IsCritical deriving (Eq,Show,Ord,Enum)
 
 data CriticalHitLevel =
-  Level0
+  NeverHits
+  | Level0
   | Level1
   | Level2
   | Level3
   | Level4
+  | AlwaysHits
   deriving (Eq,Show,Ord,Enum)
+
+increaseCrit :: CriticalHitLevel -> CriticalHitLevel
+increaseCrit AlwaysHits = AlwaysHits
+increaseCrit x = succ x
 
 levelToInt :: CriticalHitLevel -> Int
 levelToInt = \case
+  NeverHits -> -1
   Level0 -> 0
   Level1 -> 1
   Level2 -> 2
   Level3 -> 3
   Level4 -> 4
+  AlwaysHits -> 5
 
 type Prob = Double
 
-data CriticalHitCalc a m = CriticalHitCalc
+data CriticalHitCalc m = CriticalHitCalc
   {
     _initialLevel :: CriticalHitLevel
-  , _levelIntToProb :: Int -> Prob
-  , _manipulateProb :: Prob -> m Prob
-  , _drawHit :: a -> Prob -> m Double
+  , _pokemonAbility :: Counterparty -> PokemonAbility
+  , _pokemonHeldItem :: Counterparty -> Maybe HeldItem
+  , _pokemonAilment :: Counterparty -> Ailment
+  , _manipulateProb :: CriticalHitLevel -> m CriticalHitLevel
+  , _drawHit :: Prob -> m CriticalHit
   }
 
 makeLenses ''CriticalHitCalc
 
-mkCriticalHitCalc
-  :: DamageOps m
-  => (a -> Counterparty -> PokemonAbility)
-  -> (a -> Counterparty -> Ailment)
-  -> (a -> Counterparty -> HeldItem)
-  -> a
-  -> CriticalHitCalc a m
-mkCriticalHitCalc abfn ailfn itfn dta =
-  CriticalHitCalc lvl genVCriticalHit f $ \_ _ -> drawRandomDouble
-  where
-    f pr = return $ battleArmor abfn dta $ merciless abfn ailfn dta $ pr
-    lvl = scopeLens itfn dta $ Level0
 
-reduce :: DamageOps m => CriticalHitCalc a m -> a -> m CriticalHit
-reduce calc dta = do
-  v <- drawRandomDouble
-  let lvl = view levelIntToProb calc . levelToInt $ view initialLevel calc
-  lvl' <- view manipulateProb calc lvl
-  h <- view drawHit calc dta lvl'
-  let res = case (v < h) of
-              True  -> IsCritical
-              False -> NotCritical
-  return res
-    
+type MercilessD =  (UserHas Merciless, TargetHas Poisoned')
 
-battleArmor :: (a -> Counterparty -> PokemonAbility) -> a -> Prob -> Prob
-battleArmor abfn dta prb =
-  parseAndAct' m' f dta prb
+type BattleArmorD = (UserHas (Either ShellArmor BattleArmor), TargetHas NotMoldBreaker)
+
+type ScopeLensD = UserHas ScopeLens
+
+mkCriticalHitCalc ::
+  (DamageOps m)
+  => (Counterparty -> PokemonAbility)
+  -> (Counterparty -> Maybe HeldItem)
+  -> (Counterparty -> Ailment)
+  -> CriticalHitCalc m
+mkCriticalHitCalc pkmnAb pkmnIt pkmnAi =
+  CriticalHitCalc Level0 pkmnAb pkmnIt pkmnAi f g
   where
-    m prsm cnstr x = do
-      let usrAb = abfn x User
-      let trgtAb = abfn x Target
-      shllArmr <- preview prsm trgtAb
-      notMb <- notMoldBreaker usrAb
-      return $ BattleArmorData (cnstr shllArmr) notMb
-    m' x = (m _BattleArmor Left x) <|> (m _ShellArmor Right x)
-    f _ _ = 0
+    f cr = return $
+      cr &
+      scopeLens pkmnIt &
+      merciless pkmnAi pkmnAb &
+      battleArmor pkmnAb
+    g pr = do
+      x <- drawRandomDouble
+      return $ case (x < pr) of
+        True -> IsCritical
+        False -> NotCritical
+
+battleArmor :: (Counterparty -> PokemonAbility) -> CriticalHitLevel -> CriticalHitLevel
+battleArmor cpf lvl = fromMaybe lvl $ do
+  let usrAb = cpf User
+  let trgtAb = cpf Target
+  trgtAb' <- (Left <$> preview _BattleArmor trgtAb) <|> (Right <$> preview _ShellArmor trgtAb)
+  usrAb'  <- notMoldBreaker usrAb
+  return $ (\_ _ -> NeverHits) (trgtAb', usrAb') lvl
+
+scopeLens :: (Counterparty -> Maybe HeldItem) -> CriticalHitLevel -> CriticalHitLevel
+scopeLens cpf lvl = fromMaybe lvl $ do
+  usrIt <- cpf User
+  sclens <- preview _ScopeLens usrIt
+  return $ (\_ x -> increaseCrit x) sclens lvl
 
 merciless ::
-  (a -> Counterparty -> PokemonAbility) -> (a -> Counterparty -> Ailment) -> a -> Prob -> Prob
-merciless abfn ailfn dta prb =
-  parseAndAct' m f dta prb
-  where
-    m x = do
-      let usrAb = abfn x User
-      let trgtAi = ailfn x Target
-      mrclss <- preview _Merciless usrAb
-      psnd <- preview _Poisoned trgtAi
-      return (mrclss, psnd)
-    f _ _ = 1
-
-scopeLens :: (a -> Counterparty -> HeldItem) -> a -> CriticalHitLevel -> CriticalHitLevel
-scopeLens itemFn dta lvl =
-  parseAndAct' m f dta lvl
-  where
-    m x = do
-      let item = itemFn dta User
-      sl <- preview _ScopeLens item
-      return $ sl
-    f _ = increaseLevel
-
-data BattleArmorData = BattleArmorData (Either BattleArmor ShellArmor) ()
-
-increaseLevel :: CriticalHitLevel -> CriticalHitLevel
-increaseLevel Level4 = Level4
-increaseLevel x = succ x
-
-genVCriticalHit :: Int -> Prob
-genVCriticalHit = \case
-  0 -> 0.0625
-  1 -> 0.125
-  2 -> 0.25
-  3 -> 0.333
-  _ -> 0.5
-
-genVICriticalHit :: Int -> Prob
-genVICriticalHit = \case
-  0 -> 0.0625
-  1 -> 0.125
-  2 -> 0.50
-  _ -> 1.00
-
-genVIICriticalHit :: Int -> Prob
-genVIICriticalHit = \case
-  0 -> 0.04167
-  1 -> 0.125
-  2 -> 0.5
-  _ -> 1.00
+  (Counterparty -> Ailment)
+  -> (Counterparty -> PokemonAbility)
+  ->  CriticalHitLevel
+  -> CriticalHitLevel
+merciless ailmf abilf lvl = fromMaybe lvl $ do
+  usrAb <- abilf User & preview _Merciless
+  trgtAi <- ailmf Target & preview _Poisoned
+  return $ (\_ _ -> AlwaysHits) (usrAb, trgtAi) lvl

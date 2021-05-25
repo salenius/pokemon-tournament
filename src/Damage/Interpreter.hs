@@ -15,7 +15,7 @@ import Attribute.Counterparty
 import Control.Lens as CLens
 
 class InterpretDamage d where
-  interp :: DamageOps m => d a m -> a -> m Damage
+  interp :: DamageOps m => d m -> m Damage
 
 class Monad m => DamageOps m where
   logInfo :: String -> m ()

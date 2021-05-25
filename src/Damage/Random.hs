@@ -17,7 +17,8 @@ import Damage.Interpreter
 data RandomFactor d a m = RandomFactor
   {
     _randomNumber :: m Double
-  , _nextCondition :: d a m}
+  , _nextCondition :: d a m
+  }
 
 makeClassy ''RandomFactor
 
@@ -29,8 +30,8 @@ mkRandomFactor = RandomFactor f
       let y = 0.15 * x + 0.85
       return y
 
-instance InterpretDamage d => InterpretDamage (RandomFactor d) where
-  interp rf dta = do
-    nxt <- flip interp dta $ rf ^. nextCondition
-    rnd <- (rf ^. randomNumber)
-    return $ nxt <> Damage rnd
+-- instance InterpretDamage d => InterpretDamage (RandomFactor d) where
+  -- interp rf dta = do
+    -- nxt <- flip interp dta $ rf ^. nextCondition
+    -- rnd <- (rf ^. randomNumber)
+    -- return $ nxt <> Damage rnd
