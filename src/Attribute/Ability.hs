@@ -78,6 +78,10 @@ data Bulletproof = Bulletproof deriving (Eq,Show,Read,Ord,Generic)
 _Bulletproof :: Ability Bulletproof
 _Bulletproof = ability
 
+data Competitive = Competitive deriving (Eq,Show,Read,Ord,Generic)
+_Competitive :: Ability Competitive
+_Competitive = ability
+
 data Chlorophyll = Chlorophyll deriving (Eq,Show,Read,Ord,Generic)
 _Chlorophyll :: Ability Chlorophyll
 _Chlorophyll = ability
