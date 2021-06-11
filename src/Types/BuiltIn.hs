@@ -23,4 +23,7 @@ data TypeOf =
   | Ghost
   | Dragon
   | Fairy
-  deriving (Eq, Show, Read)
+  deriving (Eq, Show, Read, Ord, Enum, Bounded)
+
+typeOf :: [TypeOf]
+typeOf = enumFromTo minBound maxBound

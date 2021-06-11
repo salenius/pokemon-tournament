@@ -26,14 +26,20 @@ instance AsCounterparty (UserHas a) where
 instance AsCounterparty (TargetHas a) where
   asCounterparty _ = Target
 
+class Opposing plr where
+  opposite :: plr -> plr
 
 fromCounterparty :: Counterparty -> CounterpartyHas ()
 fromCounterparty User = Left $ UserHas ()
 fromCounterparty Target = Right $ TargetHas ()
 
-opposite :: Counterparty -> Counterparty
-opposite User = Target
-opposite Target = User
+instance Opposing Counterparty where
+  opposite User = Target
+  opposite Target = User
+
+instance Opposing Player where
+  opposite Player1 = Player2
+  opposite Player2 = Player1
 
 isUser :: Counterparty -> Maybe Counterparty
 isUser User = Just User

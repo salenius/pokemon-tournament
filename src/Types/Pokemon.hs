@@ -2,9 +2,14 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveTraversable #-}
 
-module Types.Pokemon where
+module Types.Pokemon (
+  module BI
+  ,PokemonType
+  ,pokemonTypeToList
+  ,ListOf2(..)
+                     ) where
 
-import Types.BuiltIn
+import Types.BuiltIn as BI
 
 type PokemonType = ListOf2 TypeOf
 
