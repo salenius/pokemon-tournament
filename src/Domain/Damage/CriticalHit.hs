@@ -1,41 +1,67 @@
-
 module Domain.Damage.CriticalHit where
 
--- import Attribute.Counterparty
--- import Attribute.Ability
--- import Attribute.Item
--- import Attribute.Ailment
 import Attribute
-import Domain.Logic
-import Prelude hiding (not,and,or,when)
-import Domain.Common
+import Domain.Attribute
+import Types.Pokemon
+import Stats.Base
 
-class (CounterpartyGetter m,
-       PokemonAttrGetter m,
-       MoldBreakerGetter m,
-       Monad m) => CritHit m where
-  scopeLens :: Player -> m Bool
-  scopeLens = heldItemIs _ScopeLens
-  merciless :: Player -> m Bool 
-  merciless = abilityIs _Merciless
-  battleArmor :: Player -> m Bool 
-  battleArmor = abilityIs _BattleArmor
-  shellArmor :: Player -> m Bool
-  shellArmor = abilityIs _ShellArmor
-  increaseLevel :: m Action
-  nullifyLevel :: m Action
-  levelToTop :: m Action
-  getCriticalHit :: m CriticalHit
+class (Alternative m,
+       MonadLogic m,
+       GetCounterparty m,
+       IgnoreAbility m,
+       IgnoreItem m,
+       PokemonAttribute m) => CriticalHitCalc m where
+  -- Battle Armor & Shell Armor are reflected here
+  abilityNonPreventing :: m PokemonAbility
+  -- Scope Lens is here
+  chanceIncreasingItem :: m (HeldItem, Int)
+  -- Merciless ability belongs to this
+  chanceIncreasingAilment :: m (PokemonAbility, Ailment, Int)
+  -- If move has increased CH (like Stone Edge has), it's reflected here
+  criticalHitLevel :: m Int
+  genRandomDouble :: m Double
 
+criticalHit :: CriticalHitCalc m => m Double
+criticalHit = do
+  lvl  <- criticalHitLevel
+  trgt <- counterparty Target
+  tAb  <- pokemonAbility trgt
+  ab   <- abilityNonPreventing
+  lvl' <- addCriticalHitLevel lvl
+  rnd  <- genRandomDouble
+  ab === tAb <|> ignoreTargetAbility
+  guard $ critAsProb lvl' > rnd
+  return 1.5
 
-program :: CritHit m => m CriticalHit
-program = do
-  userHas scopeLens
-    --> increaseLevel
-  userHas merciless `and` targetHas poisoned
-    --> levelToTop 
-  targetHas shellArmor `or` targetHas battleArmor
-    `and'`
-    userHas ~/ moldBreaker'
-    --> nullifyLevel
-  getCriticalHit
+addCriticalHitLevel :: CriticalHitCalc m => Int -> m Int
+addCriticalHitLevel lvl = do
+  mc <- mercilessly lvl
+  sc <- scopeLensly mc
+  return sc
+
+mercilessly :: CriticalHitCalc m => Int -> m Int
+mercilessly lvl = do
+  usr  <- counterparty User
+  trgt <- counterparty Target
+  ab'  <- pokemonAbility usr
+  ail  <- pokemonAilment trgt
+  (ab, ai, ll) <- chanceIncreasingAilment
+  ab === ab' <&&> ail === ai <|> guard True
+  let l' = lvl + ll
+  once $ return l' <|> return lvl
+
+scopeLensly :: CriticalHitCalc m => Int -> m Int
+scopeLensly lvl = do
+  usr    <- counterparty User
+  it     <- pokemonHeldItem usr
+  (i, l) <- chanceIncreasingItem
+  i === it <&&> ableToUseItem usr <|> guard True
+  let l' = lvl + l
+  once $ return l' <|> return lvl
+
+critAsProb :: Int -> Double
+critAsProb 0 = 0.0625
+critAsProb 1 = 0.25
+critAsProb 2 = 0.333
+critAsProb 3 = 0.5
+critAsProb _ = 1.0

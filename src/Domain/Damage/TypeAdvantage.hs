@@ -1,111 +1,75 @@
+{-# LANGUAGE ViewPatterns #-}
+
+
 module Domain.Damage.TypeAdvantage where
 
-import Domain.Logic
-import Domain.Common
-import Prelude hiding (or,and,not,filter)
+import Attribute
+import Domain.Attribute
+import Types.BuiltIn
 import Types.Pokemon
 import Types.Effect
-import Types.BuiltIn
-import qualified Types.BuiltIn as Tp
-import Attribute
-import Control.Monad.Reader
 
-class (CounterpartyGetter m,
-       MoldBreakerGetter m,
-       PokemonAttrGetter m,
-       Monad m) => TypeAdvantage m where
-  moveType :: m TypeOf
-  pokemonType :: m PokemonType
-  pokemonType = do
-    x <- getUser
-    getTypeOf x
-  isPartOf :: m PokemonType -> TypeOf -> m Bool
-  isPartOf pt t = elem t <$> pt
-  typeAdvantage :: m TypeOf -> m PokemonType -> m TypeEffect
-  isSupereffective :: TypeEffect -> m Bool
-  isSupereffective eff = return $ eff == SuperEffective
-  moveTypeIs :: TypeOf -> m Bool
-  moveTypeIs tp = (==) tp <$> moveType
-  multiplyBy :: Double -> m Action
-  dropItem :: Player -> m Action
-  -- Items
-  expertBelt, chilanBerry, babiriBerry :: Player -> m Bool
-  occaBerry, chartiBerry, chopleBerry, colburBerry :: Player -> m Bool
-  habanBerry, kasibBerry, kebiaBerry, passhoBerry :: Player -> m Bool
-  payapaBerry, roseliBerry, rindoBerry, shucaBerry :: Player -> m Bool
-  tangaBerry, wacanBerry, yacheBerry  :: Player -> m Bool
-  expertBelt = heldItemIs _ExpertBelt
-  chilanBerry = heldItemIs _ChilanBerry
-  babiriBerry = heldItemIs _BabiriBerry
-  occaBerry   = heldItemIs _OccaBerry
-  chartiBerry = heldItemIs _ChartiBerry
-  chopleBerry = heldItemIs _ChopleBerry
-  colburBerry = heldItemIs _ColburBerry
-  habanBerry  = heldItemIs _HabanBerry
-  kasibBerry  = heldItemIs _KasibBerry
-  kebiaBerry  = heldItemIs _KebiaBerry
-  passhoBerry = heldItemIs _PasshoBerry
-  payapaBerry = heldItemIs _PayapaBerry
-  roseliBerry = heldItemIs _RoseliBerry
-  rindoBerry  = heldItemIs _RindoBerry
-  shucaBerry  = heldItemIs _ShucaBerry
-  tangaBerry  = heldItemIs _TangaBerry
-  wacanBerry  = heldItemIs _WacanBerry
-  yacheBerry  = heldItemIs _YacheBerry
- 
-  -- Abilities
-  neuroforce :: Player -> m Bool
-  solidRock :: Player -> m Bool
-  filter :: Player -> m Bool
+class (MonadLogic m,
+      GetCounterparty m,
+      Alternative m,
+      PokemonAttribute m,
+      IgnoreItem m,
+      IgnoreAbility m) => TypeAdvantageCalc m where
+  typeBerry :: m (HeldItem, TypeOf, TypeEffect)
+  supereffectiveItem :: m (HeldItem, Double)
+  supereffectiveReducingAbility :: m PokemonAbility
+  typeAdvantageCalc :: m (TypeOf -> TypeOf -> TypeEffect)
+  moveTypeOf :: m TypeOf
+  dropItem :: Player -> m ()
 
-infixl 5 `isPartOf`
 
-program :: TypeAdvantage m => m TypeEffect
-program = do
-  eff <- typeAdvantage moveType pokemonType
-  isSupereffective eff `and` userHas expertBelt
-    --> multiplyBy 1.1
-  isSupereffective eff
-    `and'` targetHas solidRock `or` targetHas filter
-    `and'` userHas ~/ moldBreaker'
-    --> multiplyBy 0.75
-  isSupereffective eff
-    `and` userHas neuroforce
-    --> multiplyBy 1.25
-  targetHas chilanBerry `and` moveTypeIs Tp.Normal
-    --> multiplyAndDrop
-  whenItComesToBerries eff >-> do
-    babiriBerry `iff` Steel
-    occaBerry `iff` Fire
-    chartiBerry `iff` Rock
-    chopleBerry `iff` Fighting
-    colburBerry `iff` Dark
-    habanBerry `iff` Dragon
-    kasibBerry `iff` Ghost
-    kebiaBerry `iff` Poison
-    passhoBerry `iff` Water
-    payapaBerry `iff` Psychic
-    roseliBerry `iff` Fairy
-    rindoBerry `iff` Grass
-    shucaBerry `iff` Ground
-    tangaBerry `iff` Bug
-    wacanBerry `iff` Electric
-    yacheBerry `iff` Ice
-  return eff
-  where
-    iff = berryCase
-    (>->) = ($)
-    whenItComesToBerries f = flip runReaderT f
+typeAdvantage :: TypeAdvantageCalc m => m Double
+typeAdvantage = do
+  tp <- typeAdvantageCalc
+  trgt <- counterparty Target
+  ptyp <- pokemonType trgt
+  mvtp <- moveTypeOf
+  let mult = calcTypeEffect tp mvtp ptyp
+  eb <- once $ expertBelting mult <|> return mult
+  br <- once $ berrying eb <|> return eb
+  sr <- once $ solidRocking br <|> return br
+  return $ sr
+  
+calcTypeEffect :: (TypeOf -> TypeOf -> TypeEffect) -> TypeOf -> PokemonType -> Double
+calcTypeEffect tp mvt = foldr (*) 1 . fmap effectAsDouble . fmap (tp mvt)
 
-multiplyAndDrop :: TypeAdvantage m => m Action
-multiplyAndDrop = do
-  multiplyBy 0.5
-  targetDoes dropItem
+doubleToEffect mult = case mult of
+                        ((==) 0 -> True) -> NoEffect
+                        ((<) 1 -> True) -> NotVeryEffective
+                        ((>) 1 -> True) -> SuperEffective
+                        _ -> NormalEffect
 
-berryCase :: TypeAdvantage m =>  (Player -> m Bool) -> TypeOf -> ReaderT TypeEffect m Action
-berryCase berrycond tpof = do
-  eff <- ask
-  lift $ isSupereffective eff
-    `and` targetHas berrycond
-    `and` moveTypeIs tpof
-    --> multiplyAndDrop
+expertBelting :: TypeAdvantageCalc m => Double -> m Double
+expertBelting dbl = do
+  usr <- counterparty User
+  it  <- pokemonHeldItem usr
+  (sei, mult) <- supereffectiveItem
+  sei === it <&&> ableToUseItem usr
+  guard $ doubleToEffect dbl == SuperEffective
+  return $ mult * dbl
+
+berrying :: TypeAdvantageCalc m => Double -> m Double
+berrying dbl = do
+  trgt <- counterparty Target
+  it   <- pokemonHeldItem trgt
+  mvt  <- moveTypeOf
+  (br, tp, eff) <- typeBerry
+  let eff' = doubleToEffect dbl
+  eff' === eff <&&> it === br <&&> mvt === tp <&&> ableToUseItem trgt
+  dropItem trgt
+  return $ dbl * 0.5
+
+solidRocking :: TypeAdvantageCalc m => Double -> m Double
+solidRocking dbl = do
+  trgt <- counterparty Target
+  ab   <- pokemonAbility trgt
+  let eff = doubleToEffect dbl
+  sab  <- supereffectiveReducingAbility
+  ab === sab <|> ignoreTargetAbility
+  eff === SuperEffective
+  return $ dbl * 0.5
