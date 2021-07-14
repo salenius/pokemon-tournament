@@ -14,6 +14,7 @@ data TypeEffect =
   | SuperEffective
   deriving (Eq,Show,Ord)
 
+
 effectAsDouble :: TypeEffect -> Double
 effectAsDouble NoEffect = 0
 effectAsDouble NotVeryEffective = 0.5
