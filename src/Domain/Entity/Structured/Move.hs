@@ -124,6 +124,9 @@ parseDamageCalcOrStatus ast =
     Right x -> Right (Damage x)
     Left x -> parseStatus ast
 
+parseMove
+  :: M.Move typeof choice success hit damage eff
+  -> Either String (Move () typeof () success hit damage eff)
 parseMove ast = Move <$>
   parseName ast <*>
   return () <*>
